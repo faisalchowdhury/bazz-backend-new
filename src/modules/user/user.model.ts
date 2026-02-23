@@ -21,7 +21,7 @@ const userSchema = new Schema<IUser>(
       enum: ["admin", "user", "trainer"],
       default: "user",
     },
-    profilePicture: { type: String },
+    profilePicture: { type: String, required: false },
     bio: { type: String, required: false },
     isVerified: { type: Boolean, required: true, default: false },
     isDeleted: { type: Boolean, required: true, default: false },

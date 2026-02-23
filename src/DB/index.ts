@@ -20,7 +20,6 @@ const admin2 = {
   gender: "not_prefer_to_say",
   password: "1qazxsw2",
   role: "admin",
-
   isDeleted: false,
   isVerified: true,
 };

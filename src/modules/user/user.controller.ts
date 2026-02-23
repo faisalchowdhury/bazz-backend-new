@@ -309,7 +309,7 @@ export const verifyOTP = catchAsync(async (req: Request, res: Response) => {
 
 // User Id
 export const updateUser = catchAsync(async (req: Request, res: Response) => {
-  const { name, surname, contact, address } = req.body;
+  const { firstName, lastName, dateOfBirth, bio } = req.body;
 
   const decoded = req.user as IUserPayload;
   const userId = decoded.id;
@@ -321,10 +321,10 @@ export const updateUser = catchAsync(async (req: Request, res: Response) => {
 
   const updateData: any = {};
 
-  if (name) updateData.name = name;
-  if (surname) updateData.surname = surname;
-  if (contact) updateData.contact = contact;
-  if (address) updateData.address = address;
+  if (firstName) updateData.name = firstName;
+  if (lastName) updateData.surname = lastName;
+  if (dateOfBirth) updateData.contact = dateOfBirth;
+  if (bio) updateData.address = bio;
 
   // // Email update – SAFE way
   // if (email && email !== user.email) {
@@ -344,7 +344,6 @@ export const updateUser = catchAsync(async (req: Request, res: Response) => {
     updateData.image = `/images/${req.file.filename}`;
   }
 
-  console.log(userId);
   const updatedUser = await UserService.updateUserById(userId, updateData);
 
   return sendResponse(res, {
@@ -410,7 +409,7 @@ export const uploadProfilePicture = catchAsync(
     const uploadImage = await UserModel.findOneAndUpdate(
       { _id: userId },
       payload,
-    );
+    ).select("-password");
 
     return sendResponse(res, {
       statusCode: 200,

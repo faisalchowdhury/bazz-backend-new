@@ -15,13 +15,12 @@ import { generateToken, verifyToken } from "../../utils/JwtToken";
 import { TRole } from "../../config/role";
 import paginationBuilder from "../../utils/paginationBuilder";
 import mongoose, { Types } from "mongoose";
-import { addDays } from "date-fns";
 import {
   twilioAccountSid,
   twilioAuthToken,
   twilioPhoneNumber,
 } from "../../config";
-import sendResponse from "../../utils/sendResponse";
+
 import { JwtPayloadWithUser } from "../../middlewares/userVerification";
 
 export const registerUserService = async (data: any) => {
@@ -38,16 +37,23 @@ export const registerUserService = async (data: any) => {
     throw new ApiError(400, "User already exist");
   }
   const hashedPassword = await hashPassword(password);
-  // Create new user
-  const newUser = await UserModel.create({
+
+  const userPayload: any = {
     firstName,
     lastName,
     email,
     dateOfBirth,
     gender,
     password: hashedPassword,
+    bio,
     isVerified: false,
-  });
+  };
+
+  if (data.file) {
+    userPayload.profilePicture = `/images/${data.file.filename}`;
+  }
+  // Create new user
+  const newUser = await UserModel.create(userPayload);
 
   // Generate and store OTP (optional if you’re using OTP verification)
   const otp = Math.floor(100000 + Math.random() * 900000);
