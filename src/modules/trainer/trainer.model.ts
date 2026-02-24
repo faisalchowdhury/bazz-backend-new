@@ -7,13 +7,17 @@ const trainerSchema = new mongoose.Schema<ITrainer>({
     ref: "User",
     required: true,
   },
+  fullName: {
+    type: String,
+  },
+  userName: {
+    type: String,
+  },
   texDocument: {
     type: String,
-    required: true,
   },
   specialties: {
     type: [String],
-    required: true,
   },
   certificates: {
     type: [
@@ -36,14 +40,13 @@ const trainerSchema = new mongoose.Schema<ITrainer>({
         },
       },
     ],
-    required: true,
   },
   availability: {
     type: [String],
-    required: true,
   },
   experience: {
     type: Number,
-    required: true,
   },
 });
+
+export const TrainerModel = mongoose.model<ITrainer>("Trainer", trainerSchema);

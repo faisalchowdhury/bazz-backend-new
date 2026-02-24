@@ -1,2 +1,2 @@
-export type TRole = "admin" | "employee" | "user";
-export const ERole: TRole[] = ["admin", "employee", "user"];
+export type TRole = "admin" | "trainer" | "user";
+export const ERole: TRole[] = ["admin", "trainer", "user"];

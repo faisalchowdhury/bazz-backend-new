@@ -9,6 +9,8 @@ interface certificates {
 
 export interface ITrainer {
   userId: Types.ObjectId;
+  fullName: string;
+  userName: string;
   texDocument: string;
   specialties: string[];
   certificates: certificates[];

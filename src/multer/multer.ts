@@ -49,6 +49,8 @@ const storage = multer.diskStorage({
       ].includes(extName)
     ) {
       folder = "public/media"; // Move audio/video files to the sound folder
+    } else if (extName === ".pdf") {
+      folder = "public/documents";
     }
 
     cb(null, folder);

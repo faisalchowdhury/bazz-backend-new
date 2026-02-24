@@ -24,8 +24,16 @@ import {
 import { JwtPayloadWithUser } from "../../middlewares/userVerification";
 
 export const registerUserService = async (data: any) => {
-  const { firstName, lastName, email, dateOfBirth, password, gender, bio } =
-    data.body;
+  const {
+    firstName,
+    lastName,
+    email,
+    dateOfBirth,
+    password,
+    gender,
+    bio,
+    role,
+  } = data.body;
 
   console.log(data.body);
   const start = Date.now();
@@ -46,6 +54,7 @@ export const registerUserService = async (data: any) => {
     gender,
     password: hashedPassword,
     bio,
+    role,
     isVerified: false,
   };
 
