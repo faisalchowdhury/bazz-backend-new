@@ -10,12 +10,14 @@ import {
 } from "../modules/settings/privacy/Privacy.controller";
 import { AdminRoutes } from "../modules/admin/admin.route";
 import { TrainerRoutes } from "../modules/trainer/trainer.router";
+import { ServiceRoutes } from "../modules/service/service.route";
 
 // import { PaymentRoute } from "../modules/unused_payments/payment.route";
 
 export const routesConfig = [
   { path: "auth", handler: UserRoutes },
   { path: "trainer", handler: TrainerRoutes },
+  { path: "service", handler: ServiceRoutes },
 
   { path: "terms", handler: TermsRoutes },
   { path: "about", handler: AboutRoutes },
