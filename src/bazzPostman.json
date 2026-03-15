@@ -1,0 +1,823 @@
+{
+  "info": {
+    "name": "P2P FitTech API",
+    "description": "Complete API collection for P2P FitTech — Auth, Trainer, User, Workout",
+    "_postman_id": "p2p-fittech-collection-v1",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000/api",
+      "type": "string"
+    },
+    { "key": "userToken", "value": "", "type": "string" },
+    { "key": "trainerToken", "value": "", "type": "string" },
+    { "key": "userId", "value": "", "type": "string" },
+    { "key": "trainerId", "value": "", "type": "string" },
+    { "key": "blockId", "value": "", "type": "string" },
+    { "key": "exerciseId", "value": "", "type": "string" },
+    { "key": "workoutId", "value": "", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "🔐 Auth",
+      "item": [
+        {
+          "name": "Register User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.success && res.data.token) {",
+                  "  pm.collectionVariables.set('userToken', res.data.token);",
+                  "  pm.collectionVariables.set('userId', res.data._id);",
+                  "  console.log('✅ User token saved');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "register"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"email\": \"john@test.com\",\n  \"password\": \"Password123!\",\n  \"gender\": \"male\",\n  \"role\": \"user\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Register Trainer",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.success && res.data.token) {",
+                  "  pm.collectionVariables.set('trainerToken', res.data.token);",
+                  "  console.log('✅ Trainer token saved');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "register"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Gabriel\",\n  \"lastName\": \"Rowling\",\n  \"email\": \"gabriel@trainer.com\",\n  \"password\": \"Password123!\",\n  \"gender\": \"male\",\n  \"role\": \"trainer\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Login User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.success && res.data.token) {",
+                  "  pm.collectionVariables.set('userToken', res.data.token);",
+                  "  pm.collectionVariables.set('userId', res.data._id);",
+                  "  console.log('✅ User token saved');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"john@test.com\",\n  \"password\": \"Password123!\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Login Trainer",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.success && res.data.token) {",
+                  "  pm.collectionVariables.set('trainerToken', res.data.token);",
+                  "  console.log('✅ Trainer token saved');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"gabriel@trainer.com\",\n  \"password\": \"Password123!\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["health"]
+            }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "🏋️ Trainer",
+      "item": [
+        {
+          "name": "Get All Trainers",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/trainers",
+              "host": ["{{baseUrl}}"],
+              "path": ["trainers"]
+            }
+          }
+        },
+        {
+          "name": "Get All Trainers (Filter by Specialty)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/trainers?specialty=maintain_physique&verified=true",
+              "host": ["{{baseUrl}}"],
+              "path": ["trainers"],
+              "query": [
+                { "key": "specialty", "value": "maintain_physique" },
+                { "key": "verified", "value": "true" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Trainers by Specialty",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/trainers/specialty/maintain_physique",
+              "host": ["{{baseUrl}}"],
+              "path": ["trainers", "specialty", "maintain_physique"]
+            }
+          }
+        },
+        {
+          "name": "Get Single Trainer",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/trainers/{{trainerId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["trainers", "{{trainerId}}"]
+            }
+          }
+        },
+        {
+          "name": "Create Trainer Profile",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.success && res.data._id) {",
+                  "  pm.collectionVariables.set('trainerId', res.data._id);",
+                  "  console.log('✅ Trainer ID saved:', res.data._id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{trainerToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/trainers",
+              "host": ["{{baseUrl}}"],
+              "path": ["trainers"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Gabriel Rowling\",\n  \"bio\": \"NASM CPT specializing in physique maintenance and functional strength.\",\n  \"certifications\": [\"NASM CPT\", \"Certified Functional Strength Coach\", \"Precision Nutrition Level 1\"],\n  \"specialty\": \"maintain_physique\",\n  \"trainingStyleTags\": [\"Low-injury risk\", \"Functional strength\", \"Aesthetic balance\", \"Sustainable routines\"],\n  \"availabilityOptions\": {\n    \"aiProgram\": true,\n    \"oneOnOne\": false\n  },\n  \"systemPrompt\": \"You are Gabriel Rowling: a NASM Certified Personal Trainer, Certified Functional Strength Coach, and Precision Nutrition Level 1 Certified. Your specialty is MAINTAIN PHYSIQUE. Help users maintain an athletic physique through sustainable training, functional strength, and long-term adherence. TONE: Confident, calm, practical. OUTPUT FORMAT: 1) Weekly Plan Overview 2) Today's Session with sets/reps/rest/RPE 3) This Week Focus (3 bullets) 4) Check-in question. IMPORTANT: Output ONLY valid JSON.\",\n  \"subscriptionPrice\": {\n    \"free\": true,\n    \"paid\": 19,\n    \"premium\": 49\n  },\n  \"knowledgePack\": {\n    \"daysPerWeek\": 4,\n    \"preferredSplits\": [\"Upper-Lower\", \"Full Body\"],\n    \"repRanges\": \"8-12\",\n    \"restTimes\": \"60-90s\",\n    \"intensityMeasure\": \"RPE\",\n    \"cardioPhilosophy\": \"2-4 sessions/week Zone 2 or incline walk\",\n    \"mustUseExercises\": [\"Squat\", \"Romanian Deadlift\", \"Bench Press\", \"Pull Up\", \"Overhead Press\"],\n    \"avoidExercises\": [\"Behind-the-neck press\", \"Upright row\"],\n    \"coachingStyle\": \"balanced\",\n    \"naturalPhrases\": [\"Let's be consistent\", \"Small steps, big results\"],\n    \"neverSayPhrases\": [\"No pain no gain\", \"Go hard or go home\"]\n  }\n}"
+            }
+          }
+        },
+        {
+          "name": "Update Trainer Profile",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{trainerToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/trainers/{{trainerId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["trainers", "{{trainerId}}"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"bio\": \"Updated bio — 5+ years helping clients maintain peak physique.\",\n  \"availabilityOptions\": {\n    \"aiProgram\": true,\n    \"oneOnOne\": true\n  }\n}"
+            }
+          }
+        },
+
+        {
+          "name": "📦 Exercise Blocks",
+          "item": [
+            {
+              "name": "Get Exercise Library",
+              "request": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{baseUrl}}/trainers/{{trainerId}}/blocks",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["trainers", "{{trainerId}}", "blocks"]
+                }
+              }
+            },
+            {
+              "name": "Get Exercise Library (Approved Only)",
+              "request": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{baseUrl}}/trainers/{{trainerId}}/blocks?approvedOnly=true",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["trainers", "{{trainerId}}", "blocks"],
+                  "query": [{ "key": "approvedOnly", "value": "true" }]
+                }
+              }
+            },
+            {
+              "name": "Get Exercise Library (Filter by Category)",
+              "request": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{baseUrl}}/trainers/{{trainerId}}/blocks?category=upper_body&approvedOnly=true",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["trainers", "{{trainerId}}", "blocks"],
+                  "query": [
+                    { "key": "category", "value": "upper_body" },
+                    { "key": "approvedOnly", "value": "true" }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Create Exercise Block (Manual)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "const res = pm.response.json();",
+                      "if (res.success && res.data._id) {",
+                      "  pm.collectionVariables.set('blockId', res.data._id);",
+                      "  console.log('✅ Block ID saved:', res.data._id);",
+                      "}"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" },
+                  { "key": "Authorization", "value": "Bearer {{trainerToken}}" }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/trainers/{{trainerId}}/blocks",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["trainers", "{{trainerId}}", "blocks"]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"10 Upper Body Exercises\",\n  \"description\": \"Core upper body movements for physique maintenance\",\n  \"category\": \"upper_body\",\n  \"exercises\": [\n    {\n      \"name\": \"Bench Press\",\n      \"muscleGroup\": \"chest\",\n      \"difficulty\": \"intermediate\",\n      \"equipment\": \"barbell\",\n      \"sets\": 4,\n      \"reps\": \"8-10\",\n      \"restTime\": \"90s\",\n      \"rpe\": \"7-8\",\n      \"steps\": [\n        { \"order\": 1, \"instruction\": \"Lie flat on bench, grip bar slightly wider than shoulder-width\", \"tip\": \"Keep shoulder blades retracted\" },\n        { \"order\": 2, \"instruction\": \"Lower bar to mid-chest under control\", \"tip\": \"3-second descent\" },\n        { \"order\": 3, \"instruction\": \"Press bar back up to full extension\", \"tip\": \"Drive feet into floor\" }\n      ],\n      \"substitutions\": {\n        \"noBarbell\": \"Dumbbell Bench Press\",\n        \"noMachine\": \"Push-up variations\",\n        \"homeOnly\": \"Floor Press with dumbbells\",\n        \"hotelGym\": \"Dumbbell Bench Press or Cable Fly\"\n      },\n      \"tags\": [\"compound\", \"push\", \"chest\", \"maintenance\"]\n    },\n    {\n      \"name\": \"Pull-Up\",\n      \"muscleGroup\": \"back\",\n      \"difficulty\": \"intermediate\",\n      \"equipment\": \"pull_up_bar\",\n      \"sets\": 3,\n      \"reps\": \"6-10\",\n      \"restTime\": \"90s\",\n      \"rpe\": \"8\",\n      \"steps\": [\n        { \"order\": 1, \"instruction\": \"Hang from bar with overhand grip, hands shoulder-width apart\" },\n        { \"order\": 2, \"instruction\": \"Pull chest toward bar, leading with elbows\", \"tip\": \"Think elbows to hips\" },\n        { \"order\": 3, \"instruction\": \"Lower slowly back to full hang\", \"tip\": \"3-second descent\" }\n      ],\n      \"substitutions\": {\n        \"noBarbell\": \"Lat Pulldown\",\n        \"noMachine\": \"Band-assisted Pull-Up\",\n        \"homeOnly\": \"Doorframe Pull-Up or Band Pull-Apart\",\n        \"hotelGym\": \"Lat Pulldown machine\"\n      },\n      \"tags\": [\"compound\", \"pull\", \"back\", \"maintenance\"]\n    }\n  ]\n}"
+                }
+              }
+            },
+            {
+              "name": "Generate Exercise Block (AI) ⚡",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "const res = pm.response.json();",
+                      "if (res.success && res.data._id) {",
+                      "  pm.collectionVariables.set('blockId', res.data._id);",
+                      "  console.log('✅ AI Block ID saved:', res.data._id);",
+                      "  console.log('⚠️ Remember to approve this block before users can use it');",
+                      "}"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" },
+                  { "key": "Authorization", "value": "Bearer {{trainerToken}}" }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/trainers/{{trainerId}}/blocks/generate",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["trainers", "{{trainerId}}", "blocks", "generate"]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"blockName\": \"20 Upper Body Exercises\",\n  \"category\": \"upper_body\",\n  \"count\": 20,\n  \"context\": \"For maintenance clients, moderate intensity, focus on compound movements and functional strength\"\n}"
+                }
+              }
+            },
+            {
+              "name": "Approve AI-Generated Block ✅",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{trainerToken}}" }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/trainers/{{trainerId}}/blocks/{{blockId}}/approve",
+                  "host": ["{{baseUrl}}"],
+                  "path": [
+                    "trainers",
+                    "{{trainerId}}",
+                    "blocks",
+                    "{{blockId}}",
+                    "approve"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Update Exercise Block",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" },
+                  { "key": "Authorization", "value": "Bearer {{trainerToken}}" }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/trainers/{{trainerId}}/blocks/{{blockId}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["trainers", "{{trainerId}}", "blocks", "{{blockId}}"]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"15 Upper Body Exercises (Updated)\",\n  \"description\": \"Updated description for this block\"\n}"
+                }
+              }
+            },
+            {
+              "name": "Add Exercise to Block",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "const res = pm.response.json();",
+                      "if (res.success && res.data.exercises) {",
+                      "  const exercises = res.data.exercises;",
+                      "  const lastEx = exercises[exercises.length - 1];",
+                      "  pm.collectionVariables.set('exerciseId', lastEx._id);",
+                      "  console.log('✅ Exercise ID saved:', lastEx._id);",
+                      "}"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" },
+                  { "key": "Authorization", "value": "Bearer {{trainerToken}}" }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/trainers/{{trainerId}}/blocks/{{blockId}}/exercises",
+                  "host": ["{{baseUrl}}"],
+                  "path": [
+                    "trainers",
+                    "{{trainerId}}",
+                    "blocks",
+                    "{{blockId}}",
+                    "exercises"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Overhead Press\",\n  \"muscleGroup\": \"shoulders\",\n  \"difficulty\": \"intermediate\",\n  \"equipment\": \"barbell\",\n  \"sets\": 3,\n  \"reps\": \"8-10\",\n  \"restTime\": \"90s\",\n  \"rpe\": \"7-8\",\n  \"steps\": [\n    { \"order\": 1, \"instruction\": \"Stand with barbell at shoulder height, grip just outside shoulders\" },\n    { \"order\": 2, \"instruction\": \"Press bar directly overhead until arms fully extended\", \"tip\": \"Keep core braced\" },\n    { \"order\": 3, \"instruction\": \"Lower bar back to shoulders under control\" }\n  ],\n  \"substitutions\": {\n    \"noBarbell\": \"Dumbbell Shoulder Press\",\n    \"homeOnly\": \"Pike Push-Up\",\n    \"hotelGym\": \"Dumbbell Shoulder Press\"\n  },\n  \"tags\": [\"compound\", \"push\", \"shoulders\"]\n}"
+                }
+              }
+            },
+            {
+              "name": "Update Exercise in Block",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" },
+                  { "key": "Authorization", "value": "Bearer {{trainerToken}}" }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/trainers/{{trainerId}}/blocks/{{blockId}}/exercises/{{exerciseId}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": [
+                    "trainers",
+                    "{{trainerId}}",
+                    "blocks",
+                    "{{blockId}}",
+                    "exercises",
+                    "{{exerciseId}}"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"sets\": 4,\n  \"reps\": \"6-8\",\n  \"restTime\": \"120s\",\n  \"rpe\": \"8-9\"\n}"
+                }
+              }
+            },
+            {
+              "name": "Delete Exercise Block",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{trainerToken}}" }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/trainers/{{trainerId}}/blocks/{{blockId}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["trainers", "{{trainerId}}", "blocks", "{{blockId}}"]
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+
+    {
+      "name": "👤 User",
+      "item": [
+        {
+          "name": "Get My Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{userToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "me"]
+            }
+          }
+        },
+        {
+          "name": "Update My Profile",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{userToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "me"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"bio\": \"Fitness enthusiast working on maintaining physique\",\n  \"height\": 178,\n  \"weight\": 80\n}"
+            }
+          }
+        },
+        {
+          "name": "Complete Onboarding 🚀",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{userToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/me/onboarding",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "me", "onboarding"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"primaryGoal\": \"maintain_physique\",\n  \"gender\": \"male\",\n  \"dateOfBirth\": \"1995-06-15\",\n  \"height\": 178,\n  \"weight\": 80,\n  \"fitnessLevel\": \"intermediate\",\n  \"availableEquipment\": \"full_gym\",\n  \"trainingDaysPerWeek\": 4,\n  \"injuries\": [],\n  \"preferredName\": \"John\",\n  \"motivationStyle\": \"balanced\",\n  \"preferences\": \"Prefers morning workouts, no smith machine\",\n  \"preferredTrainerId\": \"{{trainerId}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Complete Onboarding (Auto-assign Trainer)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{userToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/me/onboarding",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "me", "onboarding"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"primaryGoal\": \"maintain_physique\",\n  \"gender\": \"male\",\n  \"dateOfBirth\": \"1995-06-15\",\n  \"height\": 178,\n  \"weight\": 80,\n  \"fitnessLevel\": \"intermediate\",\n  \"availableEquipment\": \"full_gym\",\n  \"trainingDaysPerWeek\": 4,\n  \"injuries\": [\"mild lower back\"],\n  \"preferredName\": \"John\",\n  \"motivationStyle\": \"balanced\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Subscribe to Trainer",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{userToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/me/subscribe/{{trainerId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "me", "subscribe", "{{trainerId}}"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tier\": \"free\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get Workout History",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{userToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/me/history?limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "me", "history"],
+              "query": [{ "key": "limit", "value": "10" }]
+            }
+          }
+        },
+        {
+          "name": "Get Memory for Trainer",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{userToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/me/memory/{{trainerId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "me", "memory", "{{trainerId}}"]
+            }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "💪 Workout",
+      "item": [
+        {
+          "name": "1️⃣ Create Workout Preferences",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.success && res.data._id) {",
+                  "  pm.collectionVariables.set('workoutId', res.data._id);",
+                  "  console.log('✅ Workout ID saved:', res.data._id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{userToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/workouts",
+              "host": ["{{baseUrl}}"],
+              "path": ["workouts"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"goal\": [\"maintain_physique\"],\n  \"focusArea\": [\"upper_body\", \"chest\"],\n  \"workout_environment\": [\"full_gym\"],\n  \"equipment_availablity\": [\"barbell\", \"dumbbells\", \"cable_machine\", \"bench\"],\n  \"workout_intensity\": [\"moderate\"],\n  \"duration\": 60,\n  \"date\": \"2026-03-15T09:00:00.000Z\"\n}"
+            }
+          }
+        },
+        {
+          "name": "2️⃣ Generate AI Plan ⚡",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{userToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/workouts/{{workoutId}}/generate",
+              "host": ["{{baseUrl}}"],
+              "path": ["workouts", "{{workoutId}}", "generate"]
+            }
+          }
+        },
+        {
+          "name": "3️⃣ Start Session",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{userToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/workouts/{{workoutId}}/start",
+              "host": ["{{baseUrl}}"],
+              "path": ["workouts", "{{workoutId}}", "start"]
+            }
+          }
+        },
+        {
+          "name": "4️⃣ Complete Exercise",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{userToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/workouts/{{workoutId}}/exercises/{{exerciseId}}/complete",
+              "host": ["{{baseUrl}}"],
+              "path": [
+                "workouts",
+                "{{workoutId}}",
+                "exercises",
+                "{{exerciseId}}",
+                "complete"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"completedSets\": 4,\n  \"actualWeight\": \"135lb\",\n  \"actualRpe\": 7,\n  \"notes\": \"Felt strong today, form was solid\"\n}"
+            }
+          }
+        },
+        {
+          "name": "5️⃣ Complete Session + Check-in 🧠",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{userToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/workouts/{{workoutId}}/complete",
+              "host": ["{{baseUrl}}"],
+              "path": ["workouts", "{{workoutId}}", "complete"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"checkInResponse\": \"Completed the session. Bench press: 135lb x 4x8, Pull-ups: bodyweight x 3x8, Overhead press: 95lb x 3x10. RPE was about 7/10. No pain or issues. Energy was good today.\",\n  \"actualDurationMinutes\": 58\n}"
+            }
+          }
+        },
+        {
+          "name": "Get Today's Workout",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{userToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/workouts/today",
+              "host": ["{{baseUrl}}"],
+              "path": ["workouts", "today"]
+            }
+          }
+        },
+        {
+          "name": "Get All My Workouts",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{userToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/workouts",
+              "host": ["{{baseUrl}}"],
+              "path": ["workouts"]
+            }
+          }
+        },
+        {
+          "name": "Get All My Workouts (Filter by Status)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{userToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/workouts?status=completed&limit=5",
+              "host": ["{{baseUrl}}"],
+              "path": ["workouts"],
+              "query": [
+                { "key": "status", "value": "completed" },
+                { "key": "limit", "value": "5" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Single Workout",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{userToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/workouts/{{workoutId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["workouts", "{{workoutId}}"]
+            }
+          }
+        },
+        {
+          "name": "Skip Session",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{userToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/workouts/{{workoutId}}/skip",
+              "host": ["{{baseUrl}}"],
+              "path": ["workouts", "{{workoutId}}", "skip"]
+            }
+          }
+        },
+        {
+          "name": "Delete Workout (Pending Only)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{userToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/workouts/{{workoutId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["workouts", "{{workoutId}}"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

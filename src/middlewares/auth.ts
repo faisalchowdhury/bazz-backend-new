@@ -4,7 +4,7 @@ import { verifyToken } from "../utils/jwt";
 export const protect = (
   req: Request & { user?: any },
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   const auth = req.headers.authorization;
 
@@ -19,6 +19,20 @@ export const protect = (
   next();
 };
 
+export const trainerOnly = (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): void => {
+  const user = (req as any).user;
+  if (user?.role !== "trainer" && user?.role !== "admin") {
+    res
+      .status(403)
+      .json({ success: false, message: "Trainer access required" });
+    return;
+  }
+  next();
+};
 export const restrictTo =
   (...roles: string[]) =>
   (req: Request & { user?: any }, res: Response, next: NextFunction) => {

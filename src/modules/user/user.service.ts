@@ -1,4 +1,4 @@
-import { IUser } from "./user.interface";
+import { IUser, TGoal } from "./user.interface";
 import "dotenv/config";
 
 import { Twilio } from "twilio";
@@ -339,7 +339,7 @@ const verifyOTPService = async (otp: string, authorizationHeader: string) => {
 
   return {
     token,
-    name: user.name,
+    name: user.firstName,
     email: user.email,
   };
 };
@@ -398,6 +398,228 @@ const UserService = {
   sendPhoneVerification,
   sendResetPasswordSMS,
   sendSMS,
+};
+import { TrainerModel } from "../trainer/trainer.model";
+
+// ─────────────────────────────────────────────────────────────
+// GET USER PROFILE
+// ─────────────────────────────────────────────────────────────
+
+export const getUserProfile = async (userId: string) => {
+  return await UserModel.findById(userId)
+    .populate(
+      "subscribedTrainer",
+      "name specialty certifications profileImage trainingStyleTags",
+    )
+    .select("-password")
+    .lean();
+};
+
+// ─────────────────────────────────────────────────────────────
+// UPDATE USER PROFILE
+// ─────────────────────────────────────────────────────────────
+
+export const updateUserProfile = async (
+  userId: string,
+  updates: Partial<IUser>,
+) => {
+  // Never allow password update through this method
+  delete (updates as any).password;
+  delete (updates as any).role;
+  delete (updates as any).email;
+
+  return await UserModel.findByIdAndUpdate(
+    userId,
+    { $set: updates },
+    { new: true },
+  ).select("-password");
+};
+
+// ─────────────────────────────────────────────────────────────
+// COMPLETE ONBOARDING
+// Auto-assigns trainer based on user's primary goal
+// ─────────────────────────────────────────────────────────────
+
+export const completeOnboarding = async (
+  userId: string,
+  data: {
+    primaryGoal: TGoal;
+    gender?: string;
+    dateOfBirth?: string;
+    height?: number;
+    weight?: number;
+    fitnessLevel?: string;
+    availableEquipment?: string;
+    trainingDaysPerWeek?: number;
+    injuries?: string[];
+    preferredName?: string;
+    motivationStyle?: string;
+    preferences?: string;
+    preferredTrainerId?: string;
+  },
+) => {
+  let assignedTrainer;
+
+  if (data.preferredTrainerId) {
+    assignedTrainer = await TrainerModel.findById(data.preferredTrainerId);
+  } else {
+    // Auto-assign: map goal → specialty
+    assignedTrainer = await TrainerModel.findOne({
+      specialty: data.primaryGoal,
+      isActive: true,
+      isVerified: true,
+    });
+  }
+
+  if (!assignedTrainer) {
+    throw new Error(`No available trainer found for goal: ${data.primaryGoal}`);
+  }
+
+  // Build initial profile memory for this trainer
+  const profileMemory = {
+    preferredName: data.preferredName,
+    goal: data.primaryGoal,
+    experienceLevel: data.fitnessLevel,
+    scheduleDaysPerWeek: data.trainingDaysPerWeek,
+    equipment: data.availableEquipment,
+    limitations: data.injuries?.join(", ") || "none",
+    preferences: data.preferences || "",
+    motivationStyle: data.motivationStyle || "balanced",
+    updatedAt: new Date(),
+  };
+
+  const user = await UserModel.findByIdAndUpdate(
+    userId,
+    {
+      $set: {
+        primaryGoal: data.primaryGoal,
+        gender: data.gender,
+        dateOfBirth: data.dateOfBirth,
+        height: data.height,
+        weight: data.weight,
+        fitnessLevel: data.fitnessLevel,
+        availableEquipment: data.availableEquipment,
+        trainingDaysPerWeek: data.trainingDaysPerWeek,
+        injuries: data.injuries || [],
+        subscribedTrainer: assignedTrainer._id,
+        subscriptionTier: "free",
+        subscriptionStartDate: new Date(),
+        onboardingCompleted: true,
+      },
+      $push: {
+        memory: {
+          trainerId: assignedTrainer._id,
+          profileMemory,
+          rollingMemory: {
+            last3Sessions: [],
+            lastKnownLoads: {},
+            adherenceNotes: "",
+            recoveryNotes: "",
+            flags: [],
+            updatedAt: new Date(),
+          },
+          lastUpdatedAt: new Date(),
+        },
+      },
+    },
+    { new: true },
+  )
+    .select("-password")
+    .populate(
+      "subscribedTrainer",
+      "name specialty certifications profileImage",
+    );
+
+  return { user, assignedTrainer };
+};
+
+// ─────────────────────────────────────────────────────────────
+// SUBSCRIBE TO TRAINER
+// ─────────────────────────────────────────────────────────────
+
+export const subscribeToTrainer = async (
+  userId: string,
+  trainerId: string,
+  tier: "free" | "paid" | "premium" = "free",
+) => {
+  const trainer = await TrainerModel.findById(trainerId);
+  if (!trainer) throw new Error("Trainer not found");
+  if (!trainer.isActive)
+    throw new Error("This trainer is not currently active");
+
+  const user = await UserModel.findById(userId);
+  if (!user) throw new Error("User not found");
+
+  // Check if memory for this trainer already exists
+  const existingMemory = user.getMemoryForTrainer(trainerId);
+
+  const updateData: any = {
+    $set: {
+      subscribedTrainer: trainerId,
+      subscriptionTier: tier,
+      subscriptionStartDate: new Date(),
+    },
+  };
+
+  // Only add new memory entry if one doesn't exist for this trainer
+  if (!existingMemory) {
+    updateData.$push = {
+      memory: {
+        trainerId,
+        profileMemory: {
+          goal: user.primaryGoal,
+          experienceLevel: user.fitnessLevel,
+          equipment: user.availableEquipment,
+          updatedAt: new Date(),
+        },
+        rollingMemory: {
+          last3Sessions: [],
+          lastKnownLoads: {},
+          flags: [],
+          updatedAt: new Date(),
+        },
+        lastUpdatedAt: new Date(),
+      },
+    };
+  }
+
+  // Increment trainer subscriber count
+  await TrainerModel.findByIdAndUpdate(trainerId, {
+    $inc: { subscriberCount: 1 },
+  });
+
+  return await UserModel.findByIdAndUpdate(userId, updateData, { new: true })
+    .select("-password")
+    .populate(
+      "subscribedTrainer",
+      "name specialty certifications profileImage",
+    );
+};
+
+// ─────────────────────────────────────────────────────────────
+// GET USER WORKOUT HISTORY
+// ─────────────────────────────────────────────────────────────
+
+export const getUserWorkoutHistory = async (userId: string, limit = 10) => {
+  const user = await UserModel.findById(userId).select("workoutHistory").lean();
+  if (!user) throw new Error("User not found");
+  return user.workoutHistory.slice(-limit).reverse();
+};
+
+// ─────────────────────────────────────────────────────────────
+// GET USER MEMORY FOR TRAINER
+// ─────────────────────────────────────────────────────────────
+
+export const getUserMemory = async (userId: string, trainerId: string) => {
+  const user = await UserModel.findById(userId).select("memory").lean();
+  if (!user) throw new Error("User not found");
+
+  const memory = user.memory.find(
+    (m: any) => m.trainerId.toString() === trainerId,
+  );
+
+  if (!memory) throw new Error("No memory found for this trainer");
+  return memory;
 };
 
 export { UserService };

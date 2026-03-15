@@ -4,8 +4,14 @@ import catchAsync from "../../utils/catchAsync";
 import sendError from "../../utils/sendError";
 import sendResponse from "../../utils/sendResponse";
 
-import { UserService } from "./user.service";
-
+import {
+  getUserMemory,
+  getUserProfile,
+  getUserWorkoutHistory,
+  updateUserProfile,
+  UserService,
+} from "./user.service";
+import { completeOnboarding as completeOnboardingService } from "./user.service";
 import { OTPModel, UserModel } from "./user.model";
 
 import { emitNotification } from "../../utils/socket";
@@ -71,8 +77,8 @@ const registerUser = catchAsync(async (req: Request, res: Response) => {
         userId: user._id,
         userMsgTittle: "🎉 Registration Completed",
         adminMsgTittle: "📢 New User Registration",
-        userMsg: `Welcome to ${process.env.AppName}, ${user?.name}! 🎉`,
-        adminMsg: `New user ${user?.name} has registered on ${process.env.AppName}.`,
+        userMsg: `Welcome to ${process.env.AppName}, ${user?.firstName}! 🎉`,
+        adminMsg: `New user ${user?.firstName} has registered on ${process.env.AppName}.`,
       } as any;
       await emitNotification(notificationPayload);
 
@@ -157,7 +163,7 @@ export const loginUser = catchAsync(async (req: Request, res: Response) => {
         token: verifyToken,
       },
     });
-    const name = user.name as string;
+    const name = user.firstName as string;
     const otp = generateOTP();
     sendOTPEmailVerification(name, email, otp)
       .then(() => {})
@@ -235,7 +241,7 @@ export const forgotPassword = catchAsync(
     const otp = generateOTP();
     // await setCache(email, otp, 300);
     // await UserService.sendPhoneVerification(phone, otp);
-    await sendOTPEmailRegister(user.name, email, otp);
+    await sendOTPEmailRegister(user.firstName, email, otp);
     await saveOTP(email, otp);
     // await saveOTP(email, otp); // Save OTP with expiration
   },
@@ -534,7 +540,7 @@ const adminloginUser = catchAsync(async (req: Request, res: Response) => {
       data: {
         user: {
           id: user._id,
-          name: user.name,
+          name: user.firstName,
           email: user.email,
           role: user.role,
         },
@@ -1030,7 +1036,7 @@ export const resetAdminPassword = catchAsync(
       message: "Password reset successfully.",
       data: {
         email: user.email,
-        name: user.name,
+        name: user.firstName,
       },
     });
   },
@@ -1144,6 +1150,125 @@ export const dashboardStats = async (req: Request, res: Response) => {
 //     });
 //   }
 // };
+
+// ─────────────────────────────────────────────────────────────
+// GET /users/me
+// ─────────────────────────────────────────────────────────────
+
+export const getProfile = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  try {
+    const user = await getUserProfile((req as any).user._id.toString());
+    if (!user) {
+      res.status(404).json({ success: false, message: "User not found" });
+      return;
+    }
+    res.json({ success: true, data: user });
+  } catch (err: any) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+// ─────────────────────────────────────────────────────────────
+// PUT /users/me
+// ─────────────────────────────────────────────────────────────
+
+export const updateProfile = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  try {
+    const user = await updateUserProfile(
+      (req as any).user._id.toString(),
+      req.body,
+    );
+    res.json({ success: true, data: user });
+  } catch (err: any) {
+    res.status(400).json({ success: false, message: err.message });
+  }
+};
+
+// ─────────────────────────────────────────────────────────────
+// POST /users/me/onboarding
+// ─────────────────────────────────────────────────────────────
+
+export const completeOnboarding = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  try {
+    const result = await completeOnboardingService(
+      (req as any).user._id.toString(),
+      req.body,
+    );
+    res.json({
+      success: true,
+      message: `Welcome! You've been matched with ${result.assignedTrainer.name}`,
+      data: result,
+    });
+  } catch (err: any) {
+    res.status(400).json({ success: false, message: err.message });
+  }
+};
+
+// ─────────────────────────────────────────────────────────────
+// POST /users/me/subscribe/:trainerId
+// ─────────────────────────────────────────────────────────────
+
+import { subscribeToTrainer as subscribeToTrainerService } from "./user.service";
+
+export const subscribeToTrainer = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  try {
+    const user = await subscribeToTrainerService(
+      (req as any).user._id.toString(),
+      req.params.trainerId,
+    );
+    res.json({ success: true, message: "Subscribed successfully", data: user });
+  } catch (err: any) {
+    res.status(400).json({ success: false, message: err.message });
+  }
+};
+
+// ─────────────────────────────────────────────────────────────
+// GET /users/me/history
+// ─────────────────────────────────────────────────────────────
+
+export const getHistory = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  try {
+    const limit = parseInt(req.query.limit as string) || 10;
+    const history = await getUserWorkoutHistory(
+      (req as any).user._id.toString(),
+      limit,
+    );
+    res.json({ success: true, data: history });
+  } catch (err: any) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+// ─────────────────────────────────────────────────────────────
+// GET /users/me/memory/:trainerId
+// ─────────────────────────────────────────────────────────────
+
+export const getMemory = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const memory = await getUserMemory(
+      (req as any).user._id.toString(),
+      req.params.trainerId,
+    );
+    res.json({ success: true, data: memory });
+  } catch (err: any) {
+    res.status(404).json({ success: false, message: err.message });
+  }
+};
 
 export const getProfileInfo = async (req: Request, res: Response) => {
   const user = req.user as JwtPayloadWithUser;

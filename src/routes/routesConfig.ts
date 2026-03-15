@@ -10,14 +10,18 @@ import {
 } from "../modules/settings/privacy/Privacy.controller";
 import { AdminRoutes } from "../modules/admin/admin.route";
 import { TrainerRoutes } from "../modules/trainer/trainer.router";
-import { ServiceRoutes } from "../modules/service/service.route";
+import { CategoryRoutes } from "../modules/category/category.route";
+import { ContentRoutes } from "../modules/content/content.route";
+import { WorkoutRoutes } from "../modules/workoutGoal/workoutGoal.route";
 
 // import { PaymentRoute } from "../modules/unused_payments/payment.route";
 
 export const routesConfig = [
   { path: "auth", handler: UserRoutes },
   { path: "trainer", handler: TrainerRoutes },
-  { path: "service", handler: ServiceRoutes },
+  { path: "category", handler: CategoryRoutes },
+  { path: "content", handler: ContentRoutes },
+  { path: "workout", handler: WorkoutRoutes },
 
   { path: "terms", handler: TermsRoutes },
   { path: "about", handler: AboutRoutes },

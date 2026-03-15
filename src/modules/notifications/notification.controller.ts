@@ -225,7 +225,7 @@ export const updateUserStatus = async (
       userId: user._id,
       adminId: admin.id,
       adminMsgTittle: "User Status Updated",
-      adminMsg: `You changed status of ${user.name} to ${status}`,
+      adminMsg: `You changed status of ${user.firstName} to ${status}`,
       userMsgTittle: "Account Status Update",
       userMsg: `Your account status has been updated to "${status}" by admin.`,
     });
