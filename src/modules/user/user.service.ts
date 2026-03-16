@@ -22,6 +22,7 @@ import {
 } from "../../config";
 
 import { JwtPayloadWithUser } from "../../middlewares/userVerification";
+import { TrainerModel } from "../trainer/trainer.model";
 
 export const registerUserService = async (data: any) => {
   const {
@@ -399,7 +400,6 @@ const UserService = {
   sendResetPasswordSMS,
   sendSMS,
 };
-import { TrainerModel } from "../trainer/trainer.model";
 
 // ─────────────────────────────────────────────────────────────
 // GET USER PROFILE

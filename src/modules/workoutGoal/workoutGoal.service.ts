@@ -4,9 +4,12 @@ import {
   IPlannedExercise,
   IWorkout,
 } from "./workoutGoal.interface";
-import { UserModel } from "../user/user.model";
 import { WorkoutModel } from "./workoutGoal.model";
+import { UserModel } from "../user/user.model";
 import { TrainerModel } from "../trainer/trainer.model";
+import { ExerciseBlockModel } from "../exerciseBlock/exerciseBlock.model";
+import { ExerciseModel } from "../exercise/exercise.model";
+import { ExerciseStepModel } from "../exerciseStep/exerciseStep.model";
 import {
   callAI,
   getTrainerSystemPrompt,
@@ -15,7 +18,7 @@ import {
 
 // ─────────────────────────────────────────────────────────────
 // CREATE WORKOUT PREFERENCES
-// User fills the form — saved with status "pending", no AI plan yet
+// User fills the form — status: "pending", aiPlan: null
 // ─────────────────────────────────────────────────────────────
 
 export const createWorkoutPreferences = async (
@@ -50,54 +53,80 @@ export const createWorkoutPreferences = async (
 
 // ─────────────────────────────────────────────────────────────
 // GENERATE AI PLAN
-// Called when user hits "Generate Plan" button
-// AI reads preferences + trainer blocks + user memory → fills aiPlan
+// Queries ExerciseBlock + Exercise + ExerciseStep collections
+// Snapshots full exercise data into the workout document
 // ─────────────────────────────────────────────────────────────
 
 export const generateAIPlan = async (
   userId: string,
   workoutId: string,
 ): Promise<IWorkout> => {
-  // 1. Load workout preferences
+  // 1. Load workout
   const workout = await WorkoutModel.findOne({ _id: workoutId, userId });
   if (!workout) throw new Error("Workout not found");
   if (workout.aiPlan)
     throw new Error("AI plan already generated for this workout");
 
-  // 2. Load user with memory
-  const user = await UserModel.findById(userId).populate("subscribedTrainer");
+  // 2. Load user
+  const user = await UserModel.findById(userId);
   if (!user) throw new Error("User not found");
   if (!user.subscribedTrainer) throw new Error("No subscribed trainer found");
 
+  // 3. Load trainer from separate Trainer collection
   const trainer = await TrainerModel.findById(user.subscribedTrainer);
   if (!trainer) throw new Error("Trainer not found");
 
-  // 3. Get user memory for this trainer
+  // 4. Get user memory for this trainer
   const memory = user.getMemoryForTrainer(
-    (trainer._id as Types.ObjectId | string).toString(),
+    (trainer._id as Types.ObjectId).toString(),
   );
 
-  // 4. Get trainer's approved exercise blocks
-  const approvedBlocks = trainer.exerciseBlocks.filter(
-    (b: any) => b.isApproved,
-  );
+  // 5. Load approved blocks from ExerciseBlock collection
+  const approvedBlocks = await ExerciseBlockModel.find({
+    trainerId: trainer._id,
+    isApproved: true,
+  }).lean();
+
   if (approvedBlocks.length === 0) {
     throw new Error("Trainer has no approved exercise blocks yet");
   }
 
-  // 5. Build prompt injecting workout preferences + memory + blocks
+  // 6. Load exercises + steps for each block from separate collections
+  const blocksWithExercises = await Promise.all(
+    approvedBlocks.map(async (block) => {
+      const exercises = await ExerciseModel.find({
+        blockId: block._id,
+        isApproved: true,
+      }).lean();
+
+      const exercisesWithSteps = await Promise.all(
+        exercises.map(async (exercise) => {
+          const steps = await ExerciseStepModel.find({
+            exerciseId: exercise._id,
+          })
+            .sort({ order: 1 })
+            .lean();
+          return { ...exercise, steps };
+        }),
+      );
+
+      return { ...block, exercises: exercisesWithSteps };
+    }),
+  );
+
+  // 7. Build AI prompt
   const userMessage = buildWorkoutPromptFromPreferences({
     user,
     trainer,
     memory,
     workout,
-    exerciseBlocks: approvedBlocks,
+    exerciseBlocks: blocksWithExercises,
   });
 
-  // 6. Get trainer system prompt
+  // 8. Get trainer system prompt
   const systemPrompt = getTrainerSystemPrompt(null, trainer.systemPrompt);
 
-  // 7. Call AI
+  // 9. Call AI
   const aiResponse = await callAI({
     systemPrompt:
       systemPrompt +
@@ -106,24 +135,27 @@ export const generateAIPlan = async (
     maxTokens: 3500,
   });
 
-  // 8. Parse AI response
+  // 10. Parse AI response
   let plan: any;
   try {
     const clean = aiResponse.replace(/```json|```/g, "").trim();
     plan = JSON.parse(clean);
-  } catch (e) {
+  } catch {
     throw new Error("AI returned invalid plan. Please try again.");
   }
 
-  // 9. Map AI response to aiPlan schema
+  // 11. Map exercises — snapshot full data from collections into workout doc
   const aiPlan: IAIGeneratedPlan = {
     coachNote: plan.coachNote || "",
     thisWeekFocus: plan.thisWeekFocus || [],
     nutritionTip: plan.nutritionTip || "",
     warmUp: plan.warmUp || [],
-    mainWork: mapPlannedExercises(plan.mainWork || [], approvedBlocks),
-    accessories: mapPlannedExercises(plan.accessories || [], approvedBlocks),
-    finisher: mapPlannedExercises(plan.finisher || [], approvedBlocks),
+    mainWork: mapPlannedExercises(plan.mainWork || [], blocksWithExercises),
+    accessories: mapPlannedExercises(
+      plan.accessories || [],
+      blocksWithExercises,
+    ),
+    finisher: mapPlannedExercises(plan.finisher || [], blocksWithExercises),
     coolDown: plan.coolDown || [],
     estimatedDurationMinutes: plan.estimatedDurationMinutes || workout.duration,
     cardioGuidance: plan.cardioGuidance || "",
@@ -148,9 +180,8 @@ export const generateAIPlan = async (
     },
   };
 
-  // 10. Save plan to workout document
   workout.aiPlan = aiPlan;
-  workout.status = "pending"; // still pending until user starts
+  workout.status = "pending";
   await workout.save();
 
   return workout;
@@ -158,7 +189,6 @@ export const generateAIPlan = async (
 
 // ─────────────────────────────────────────────────────────────
 // START SESSION
-// User taps "Start Workout"
 // ─────────────────────────────────────────────────────────────
 
 export const startSessionService = async (
@@ -178,7 +208,7 @@ export const startSessionService = async (
 
 // ─────────────────────────────────────────────────────────────
 // COMPLETE EXERCISE
-// User marks a single exercise as done during the session
+// User marks a single exercise as done — logs actual weight/RPE
 // ─────────────────────────────────────────────────────────────
 
 export const completeExerciseService = async (
@@ -196,7 +226,7 @@ export const completeExerciseService = async (
   if (!workout) throw new Error("Workout not found");
   if (!workout.aiPlan) throw new Error("No AI plan found");
 
-  // Search across mainWork, accessories, finisher
+  // Search mainWork, accessories, finisher for the exercise
   const allExercises = [
     ...(workout.aiPlan.mainWork || []),
     ...(workout.aiPlan.accessories || []),
@@ -221,7 +251,6 @@ export const completeExerciseService = async (
 
 // ─────────────────────────────────────────────────────────────
 // COMPLETE SESSION + CHECK-IN + UPDATE MEMORY
-// Called when user finishes and answers the check-in question
 // ─────────────────────────────────────────────────────────────
 
 export const completeSessionService = async (
@@ -243,7 +272,7 @@ export const completeSessionService = async (
   workout.markModified("aiPlan");
   await workout.save();
 
-  // 2. Summarize memory with AI
+  // 2. Build context for memory summarizer
   const exerciseNames = [
     ...(workout.aiPlan.mainWork || []),
     ...(workout.aiPlan.accessories || []),
@@ -261,23 +290,22 @@ Intensity: ${workout.workout_intensity.join(", ")}
 Exercises completed: ${exerciseNames || "none logged"}
 `;
 
+  // 3. AI summarizes session into memory object
   const memoryUpdate = await summarizeSessionMemory(lastExchange);
-
   if (!memoryUpdate) return { workout, memoryUpdated: false };
 
-  // 3. Update user memory
+  // 4. Update user memory
   const user = await UserModel.findById(userId);
   if (!user || !workout.trainerId) return { workout, memoryUpdated: false };
 
   const memoryIndex = user.memory.findIndex(
     (m: any) => m.trainerId.toString() === workout.trainerId!.toString(),
   );
-
   if (memoryIndex === -1) return { workout, memoryUpdated: false };
 
   const mem = user.memory[memoryIndex];
 
-  // Update profile memory if AI extracted new facts
+  // Update profile memory with any new facts AI extracted
   if (memoryUpdate.profile_updates) {
     const pu = memoryUpdate.profile_updates;
     if (pu.limitations) mem.profileMemory.limitations = pu.limitations;
@@ -286,7 +314,7 @@ Exercises completed: ${exerciseNames || "none logged"}
     mem.profileMemory.updatedAt = new Date();
   }
 
-  // Build new session summary
+  // Build new session summary entry
   const newSession = {
     date: new Date(),
     workoutSummary:
@@ -301,7 +329,7 @@ Exercises completed: ${exerciseNames || "none logged"}
     flags: memoryUpdate.flags || [],
   };
 
-  // Keep only last 3 sessions
+  // Keep only last 3 sessions in rolling memory
   mem.rollingMemory.last3Sessions.push(newSession as any);
   if (mem.rollingMemory.last3Sessions.length > 3) {
     mem.rollingMemory.last3Sessions = mem.rollingMemory.last3Sessions.slice(-3);
@@ -310,7 +338,7 @@ Exercises completed: ${exerciseNames || "none logged"}
   mem.rollingMemory.updatedAt = new Date();
   mem.lastUpdatedAt = new Date();
 
-  // 4. Also push to workout history on user
+  // 5. Push to user workout history
   user.workoutHistory.push({
     trainerId: workout.trainerId,
     date: new Date(),
@@ -366,7 +394,7 @@ export const getUserWorkoutsService = async (
   if (filters.status) query.status = filters.status;
 
   return await WorkoutModel.find(query)
-    .populate("trainerId", "name specialty profilePicture")
+    .populate("trainerId", "name specialty profileImage")
     .sort({ date: -1 })
     .limit(filters.limit || 20)
     .lean();
@@ -381,7 +409,7 @@ export const getWorkoutByIdService = async (
   workoutId: string,
 ): Promise<IWorkout | null> => {
   return await WorkoutModel.findOne({ _id: workoutId, userId })
-    .populate("trainerId", "name specialty profilePicture")
+    .populate("trainerId", "name specialty profileImage")
     .lean();
 };
 
@@ -401,12 +429,12 @@ export const getTodaysWorkoutService = async (
     userId,
     date: { $gte: start, $lte: end },
   })
-    .populate("trainerId", "name specialty profilePicture")
+    .populate("trainerId", "name specialty profileImage")
     .lean();
 };
 
 // ─────────────────────────────────────────────────────────────
-// DELETE WORKOUT (only if pending)
+// DELETE WORKOUT (pending only)
 // ─────────────────────────────────────────────────────────────
 
 export const deleteWorkoutService = async (
@@ -427,7 +455,7 @@ export const deleteWorkoutService = async (
 // HELPERS
 // ─────────────────────────────────────────────────────────────
 
-// Build the AI prompt from workout preferences form data
+// Build AI prompt from workout preferences + loaded blocks
 const buildWorkoutPromptFromPreferences = ({
   user,
   trainer,
@@ -466,7 +494,7 @@ ACTIVE FLAGS: ${memory.rollingMemory?.flags?.join(", ") || "none"}
 `
     : "No previous memory. This is the user's first session.";
 
-  // Only send approved blocks, trimmed for token efficiency
+  // Format blocks for AI — only what the AI needs to select exercises
   const blocksContext = exerciseBlocks.map((block: any) => ({
     blockId: block._id,
     blockName: block.name,
@@ -495,7 +523,7 @@ USER PROFILE:
 - Height: ${user.height || "N/A"} cm | Weight: ${user.weight || "N/A"} kg
 - Injuries: ${user.injuries?.join(", ") || "none"}
 
-TODAY'S WORKOUT PREFERENCES (user filled this form):
+TODAY'S WORKOUT PREFERENCES:
 - Goal: ${workout.goal.join(", ")}
 - Focus area: ${workout.focusArea.join(", ")}
 - Environment: ${workout.workout_environment.join(", ")}
@@ -512,7 +540,7 @@ ${JSON.stringify(blocksContext, null, 2)}
 TASK:
 Generate a personalized workout plan based on the user's preferences above.
 Rules:
-- Pick exercises ONLY from the trainer's library
+- Pick exercises ONLY from the trainer's library above
 - Match exercises to today's focusArea and equipment_availablity
 - Respect the user's injuries and limitations
 - Avoid exercises performed in the last 2 sessions
@@ -557,22 +585,22 @@ Return ONLY this exact JSON:
 `;
 };
 
-// Map AI-returned exercises back to full exercise data from blocks
+// Map AI-returned exercises → snapshot full data from loaded blocks
 const mapPlannedExercises = (
   aiExercises: any[],
-  approvedBlocks: any[],
+  blocksWithExercises: any[],
 ): IPlannedExercise[] => {
   return aiExercises.map((e: any, index: number) => {
-    // Try to find the full exercise in blocks to copy steps/substitutions
-    let fullExercise: any = null;
-    for (const block of approvedBlocks) {
+    // Find the source exercise in the loaded blocks
+    let sourceExercise: any = null;
+    for (const block of blocksWithExercises) {
       const found = block.exercises.find(
         (ex: any) =>
           ex._id.toString() === e.exerciseId?.toString() ||
           ex.name === e.exerciseName,
       );
       if (found) {
-        fullExercise = found;
+        sourceExercise = found;
         break;
       }
     }
@@ -582,13 +610,14 @@ const mapPlannedExercises = (
       exerciseName: e.exerciseName,
       blockId: e.blockId ? new Types.ObjectId(e.blockId) : undefined,
       blockName: e.blockName,
-      muscleGroup: e.muscleGroup || fullExercise?.muscleGroup,
-      sets: e.sets || fullExercise?.sets || 3,
-      reps: e.reps || fullExercise?.reps || "8-12",
-      restTime: e.restTime || fullExercise?.restTime || "60s",
-      rpe: e.rpe || fullExercise?.rpe,
-      steps: fullExercise?.steps || e.steps || [],
-      substitutions: fullExercise?.substitutions || e.substitutions || {},
+      muscleGroup: e.muscleGroup || sourceExercise?.muscleGroup,
+      sets: e.sets || sourceExercise?.sets || 3,
+      reps: e.reps || sourceExercise?.reps || "8-12",
+      restTime: e.restTime || sourceExercise?.restTime || "60s",
+      rpe: e.rpe || sourceExercise?.rpe,
+      // Snapshot steps and substitutions from source exercise
+      steps: sourceExercise?.steps || e.steps || [],
+      substitutions: sourceExercise?.substitutions || e.substitutions || {},
       order: e.order ?? index + 1,
       isCompleted: false,
     };

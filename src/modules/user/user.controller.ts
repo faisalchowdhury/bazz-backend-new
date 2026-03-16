@@ -49,7 +49,7 @@ import { number } from "zod";
 //  register User
 
 const registerUser = catchAsync(async (req: Request, res: Response) => {
-  const { firstName, email } = req.body;
+  const { firstName, email, role } = req.body;
 
   // Step 1: Register the user and get OTP
   const { data } = await UserService.registerUserService(req);
@@ -89,7 +89,7 @@ const registerUser = catchAsync(async (req: Request, res: Response) => {
         success: true,
         message:
           "OTP sent to your email address. Please verify to continue registration.",
-        data: { token, role: "user" },
+        data: { token, role },
       });
     } catch (backgroundError: any) {
       console.error("Error in background tasks:", backgroundError?.message);

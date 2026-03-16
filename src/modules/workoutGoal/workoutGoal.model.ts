@@ -5,7 +5,7 @@ import { IWorkout } from "./workoutGoal.interface";
 // SUB-SCHEMAS
 // ─────────────────────────────────────────────────────────────
 
-const exerciseStepSchema = new Schema(
+const plannedExerciseStepSchema = new Schema(
   {
     order: { type: Number, required: true },
     instruction: { type: String, required: true },
@@ -15,7 +15,7 @@ const exerciseStepSchema = new Schema(
   { _id: false },
 );
 
-const substitutionsSchema = new Schema(
+const plannedSubstitutionsSchema = new Schema(
   {
     noBarbell: { type: String },
     noMachine: { type: String },
@@ -25,33 +25,36 @@ const substitutionsSchema = new Schema(
   { _id: false },
 );
 
-// A single exercise AI picked from trainer's block
+// Single exercise AI picked from Exercise + ExerciseBlock collections
+// Full data is snapshotted here — workout stays self-contained
 const plannedExerciseSchema = new Schema(
   {
-    // Reference back to trainer's exercise block
-    exerciseId: { type: Schema.Types.ObjectId },
-    exerciseName: { type: String, required: true },
-    blockId: { type: Schema.Types.ObjectId },
+    // References to separate collections
+    exerciseId: { type: Schema.Types.ObjectId, ref: "Exercise" },
+    blockId: { type: Schema.Types.ObjectId, ref: "ExerciseBlock" },
     blockName: { type: String },
+    exerciseName: { type: String, required: true },
     muscleGroup: { type: String },
 
-    // Trainer-defined prescription (copied from block)
+    // Prescription snapshotted from Exercise doc
     sets: { type: Number, required: true },
-    reps: { type: String, required: true }, // "8-12" or "30 seconds"
+    reps: { type: String, required: true },
     restTime: { type: String, default: "60s" },
-    rpe: { type: String }, // "7-8"
+    rpe: { type: String },
 
-    // Steps from trainer's exercise block
-    steps: [exerciseStepSchema],
-    substitutions: { type: substitutionsSchema },
+    // Steps snapshotted from ExerciseStep collection
+    steps: [plannedExerciseStepSchema],
+
+    // Substitutions snapshotted from Exercise doc
+    substitutions: { type: plannedSubstitutionsSchema },
 
     // Position in today's session
     order: { type: Number, required: true },
 
-    // ── Completion tracking (filled by user during/after session) ──
+    // Completion tracking — filled by user
     isCompleted: { type: Boolean, default: false },
     completedSets: { type: Number },
-    actualWeight: { type: String }, // "135lb"
+    actualWeight: { type: String },
     actualRpe: { type: Number, min: 1, max: 10 },
     notes: { type: String },
   },
@@ -68,15 +71,13 @@ const sessionStepSchema = new Schema(
   { _id: false },
 );
 
-// Full AI generated plan block
+// Full AI generated plan — null until user hits "Generate"
 const aiGeneratedPlanSchema = new Schema(
   {
-    // AI coach overview
     coachNote: { type: String },
-    thisWeekFocus: [{ type: String }], // max 3 bullets
+    thisWeekFocus: [{ type: String }],
     nutritionTip: { type: String },
 
-    // Session structure
     warmUp: [sessionStepSchema],
     mainWork: [plannedExerciseSchema],
     accessories: [plannedExerciseSchema],
@@ -86,17 +87,14 @@ const aiGeneratedPlanSchema = new Schema(
     estimatedDurationMinutes: { type: Number },
     cardioGuidance: { type: String },
 
-    // Check-in
     checkInQuestion: { type: String },
     checkInResponse: { type: String },
     checkInRespondedAt: { type: Date },
 
-    // Generation metadata
     generatedAt: { type: Date, default: Date.now },
-    trainerPersona: { type: String }, // "Gabriel Rowling"
-    trainerSpecialty: { type: String }, // "maintain_physique"
+    trainerPersona: { type: String },
+    trainerSpecialty: { type: String },
 
-    // AI context snapshot
     aiContextSnapshot: {
       userGoal: { type: String },
       fitnessLevel: { type: String },
@@ -113,57 +111,35 @@ const aiGeneratedPlanSchema = new Schema(
 
 const WorkoutSchema: Schema<IWorkout> = new Schema(
   {
-    // ── Existing fields (unchanged) ───────────────────────────
+    // ── User input (unchanged) ────────────────────────────────
     userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
     },
-    goal: {
-      type: [String],
-      required: true,
-    },
-    focusArea: {
-      type: [String],
-      required: true,
-    },
-    workout_environment: {
-      type: [String],
-      required: true,
-    },
-    equipment_availablity: {
-      type: [String],
-      required: true,
-    },
-    workout_intensity: {
-      type: [String],
-      required: true,
-    },
-    duration: {
-      type: Number,
-      required: true,
-    },
-    date: {
-      type: Date,
-      required: true,
-    },
+    goal: { type: [String], required: true },
+    focusArea: { type: [String], required: true },
+    workout_environment: { type: [String], required: true },
+    equipment_availablity: { type: [String], required: true },
+    workout_intensity: { type: [String], required: true },
+    duration: { type: Number, required: true },
+    date: { type: Date, required: true },
 
-    // ── NEW: Trainer reference ────────────────────────────────
+    // ── Trainer reference (separate collection) ───────────────
     trainerId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Trainer",
       required: false,
     },
 
-    // ── NEW: AI generated plan ────────────────────────────────
-    // Null until user hits "Generate Plan" — then AI fills this
+    // ── AI generated plan ─────────────────────────────────────
     aiPlan: {
       type: aiGeneratedPlanSchema,
       required: false,
       default: null,
     },
 
-    // ── NEW: Session status ───────────────────────────────────
+    // ── Session lifecycle ─────────────────────────────────────
     status: {
       type: String,
       enum: ["pending", "in_progress", "completed", "skipped"],
@@ -173,9 +149,7 @@ const WorkoutSchema: Schema<IWorkout> = new Schema(
     completedAt: { type: Date },
     actualDurationMinutes: { type: Number },
   },
-  {
-    timestamps: true,
-  },
+  { timestamps: true },
 );
 
 // ─────────────────────────────────────────────────────────────
@@ -187,7 +161,9 @@ WorkoutSchema.index({ userId: 1, status: 1 });
 WorkoutSchema.index({ trainerId: 1 });
 
 // ─────────────────────────────────────────────────────────────
-// MODEL
+// MODEL — guard prevents OverwriteModelError
 // ─────────────────────────────────────────────────────────────
 
-export const WorkoutModel = mongoose.model<IWorkout>("Workout", WorkoutSchema);
+export const WorkoutModel =
+  (mongoose.models.Workout as mongoose.Model<IWorkout>) ||
+  mongoose.model<IWorkout>("Workout", WorkoutSchema);

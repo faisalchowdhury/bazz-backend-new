@@ -1,8 +1,9 @@
 import { Request, Response } from "express";
-import { catchAsync } from "../../utils/catchAsync";
+
 import { registerService, loginService } from "./auth.service";
 
 import { z } from "zod";
+import catchAsync from "../../utils/catchAsync";
 
 export const registerSchema = z.object({
   name: z.string().min(3),

@@ -56,48 +56,60 @@ export type TSessionStatus =
   | "skipped";
 
 // ─────────────────────────────────────────────────────────────
-// PLANNED EXERCISE (AI selected from trainer's block)
+// EXERCISE STEP (snapshot copied from ExerciseStep collection)
 // ─────────────────────────────────────────────────────────────
 
-export interface IExerciseStep {
+export interface IPlannedExerciseStep {
   order: number;
   instruction: string;
   tip?: string;
   duration?: string;
 }
 
-export interface ISubstitutions {
+// ─────────────────────────────────────────────────────────────
+// SUBSTITUTIONS (snapshot copied from Exercise collection)
+// ─────────────────────────────────────────────────────────────
+
+export interface IPlannedSubstitutions {
   noBarbell?: string;
   noMachine?: string;
   homeOnly?: string;
   hotelGym?: string;
 }
 
+// ─────────────────────────────────────────────────────────────
+// PLANNED EXERCISE
+// AI selects from separate Exercise + ExerciseBlock collections
+// Full data snapshotted here so workout is self-contained
+// ─────────────────────────────────────────────────────────────
+
 export interface IPlannedExercise {
-  // Reference back to trainer's exercise block
-  exerciseId?: Types.ObjectId;
-  exerciseName: string;
-  blockId?: Types.ObjectId;
+  // References to separate collections
+  exerciseId?: Types.ObjectId; // ref → exercises collection
+  blockId?: Types.ObjectId; // ref → exercise_blocks collection
   blockName?: string;
+  exerciseName: string;
   muscleGroup?: string;
 
-  // Trainer-defined prescription
+  // Trainer-defined prescription (snapshotted from Exercise doc)
   sets: number;
-  reps: string; // e.g. "8-12" or "30 seconds"
-  restTime: string; // e.g. "60s"
-  rpe?: string; // e.g. "7-8"
+  reps: string; // "8-12" or "30 seconds"
+  restTime: string; // "60s"
+  rpe?: string; // "7-8"
 
-  // Steps from trainer's block
-  steps: IExerciseStep[];
-  substitutions?: ISubstitutions;
+  // Snapshotted from ExerciseStep collection
+  steps: IPlannedExerciseStep[];
 
-  // Order in today's workout
+  // Snapshotted from Exercise collection
+  substitutions?: IPlannedSubstitutions;
+
+  // Position in today's session
   order: number;
 
-  // Completion tracking (filled by user)
+  // Completion tracking — filled by user during session
   isCompleted: boolean;
   completedSets?: number;
-  actualWeight?: string; // e.g. "135lb"
+  actualWeight?: string; // "135lb"
   actualRpe?: number;
   notes?: string;
 }
@@ -113,12 +125,13 @@ export interface ISessionStep {
 }
 
 // ─────────────────────────────────────────────────────────────
-// AI GENERATED PLAN (attached to the workout goal)
+// AI GENERATED PLAN
+// Attached to workout document after user hits "Generate"
 // ─────────────────────────────────────────────────────────────
 
 export interface IAIGeneratedPlan {
-  // AI coach overview
-  coachNote: string; // e.g. "Focus on controlled reps today"
+  // Coach overview
+  coachNote: string;
   thisWeekFocus: string[]; // max 3 bullets
   nutritionTip?: string;
 
@@ -132,17 +145,17 @@ export interface IAIGeneratedPlan {
   estimatedDurationMinutes: number;
   cardioGuidance?: string;
 
-  // Check-in (filled after session)
+  // Check-in — filled after session
   checkInQuestion: string;
   checkInResponse?: string;
   checkInRespondedAt?: Date;
 
   // Generation metadata
   generatedAt: Date;
-  trainerPersona: string; // e.g. "Gabriel Rowling"
-  trainerSpecialty: string; // e.g. "maintain_physique"
+  trainerPersona: string; // "Gabriel Rowling"
+  trainerSpecialty: string; // "maintain_physique"
 
-  // AI context snapshot (for debugging/memory)
+  // Context snapshot for debugging / memory
   aiContextSnapshot?: {
     userGoal: string;
     fitnessLevel: string;
@@ -156,23 +169,23 @@ export interface IAIGeneratedPlan {
 // ─────────────────────────────────────────────────────────────
 
 export interface IWorkout extends Document {
-  // ── Existing fields (unchanged) ───────────────────────────
+  // ── User input (form fields — unchanged) ──────────────────
   userId: Types.ObjectId;
-  goal: string[]; // e.g. ["muscle_gain"]
-  focusArea: string[]; // e.g. ["upper_body", "chest"]
-  workout_environment: string[]; // e.g. ["full_gym"]
-  equipment_availablity: string[]; // e.g. ["barbell", "dumbbells"]
-  workout_intensity: string[]; // e.g. ["moderate"]
-  duration: number; // in minutes
+  goal: string[]; // ["maintain_physique"]
+  focusArea: string[]; // ["upper_body", "chest"]
+  workout_environment: string[]; // ["full_gym"]
+  equipment_availablity: string[]; // ["barbell", "dumbbells"]
+  workout_intensity: string[]; // ["moderate"]
+  duration: number; // minutes
   date: Date;
 
-  // ── NEW: Trainer reference ────────────────────────────────
-  trainerId?: Types.ObjectId; // which trainer's blocks were used
+  // ── Trainer reference (from new separate collection) ──────
+  trainerId?: Types.ObjectId; // ref → trainers collection
 
-  // ── NEW: AI generated plan ────────────────────────────────
+  // ── AI generated plan (null until user hits Generate) ─────
   aiPlan?: IAIGeneratedPlan;
 
-  // ── NEW: Session status ───────────────────────────────────
+  // ── Session lifecycle ─────────────────────────────────────
   status: TSessionStatus;
   startedAt?: Date;
   completedAt?: Date;

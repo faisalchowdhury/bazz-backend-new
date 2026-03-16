@@ -9,19 +9,28 @@ import {
   htmlRoute,
 } from "../modules/settings/privacy/Privacy.controller";
 import { AdminRoutes } from "../modules/admin/admin.route";
-import { TrainerRoutes } from "../modules/trainer/trainer.router";
+
 import { CategoryRoutes } from "../modules/category/category.route";
 import { ContentRoutes } from "../modules/content/content.route";
 import { WorkoutRoutes } from "../modules/workoutGoal/workoutGoal.route";
+import { ExerciseRoutes } from "../modules/exercise/exercise.route";
+import { ExerciseBlockRoutes } from "../modules/exerciseBlock/exerciseBlock.route";
+import { ExerciseStepRoutes } from "../modules/exerciseStep/exerciseStep.route";
+import { TrainerKnowledgePackRoutes } from "../modules/trainerKnowladge/trainerKnowladge.route";
+import { TrainerRoutes } from "../modules/trainer/trainer.route";
 
 // import { PaymentRoute } from "../modules/unused_payments/payment.route";
 
 export const routesConfig = [
   { path: "auth", handler: UserRoutes },
-  { path: "trainer", handler: TrainerRoutes },
   { path: "category", handler: CategoryRoutes },
   { path: "content", handler: ContentRoutes },
   { path: "workout", handler: WorkoutRoutes },
+  { path: "trainer", handler: TrainerRoutes },
+  { path: "trainerKnowladge", handler: TrainerKnowledgePackRoutes },
+  { path: "exercise", handler: ExerciseRoutes },
+  { path: "exerciseBlock", handler: ExerciseBlockRoutes },
+  { path: "exerciseSteps", handler: ExerciseStepRoutes },
 
   { path: "terms", handler: TermsRoutes },
   { path: "about", handler: AboutRoutes },

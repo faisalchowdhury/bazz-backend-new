@@ -14,7 +14,7 @@ import {
 
 // ─────────────────────────────────────────────────────────────
 // POST /workouts
-// User fills preferences form and saves it
+// User fills preferences form and saves it — no AI plan yet
 // ─────────────────────────────────────────────────────────────
 
 export const createWorkout = async (
@@ -32,7 +32,6 @@ export const createWorkout = async (
       date,
     } = req.body;
 
-    // Validate required fields
     if (
       !goal ||
       !focusArea ||
@@ -75,7 +74,7 @@ export const createWorkout = async (
 
 // ─────────────────────────────────────────────────────────────
 // POST /workouts/:id/generate
-// Triggers AI to generate the workout plan from preferences
+// Triggers AI — reads preferences + trainer blocks + user memory
 // ─────────────────────────────────────────────────────────────
 
 export const generatePlan = async (
@@ -100,7 +99,6 @@ export const generatePlan = async (
 
 // ─────────────────────────────────────────────────────────────
 // PATCH /workouts/:id/start
-// User taps "Start Workout"
 // ─────────────────────────────────────────────────────────────
 
 export const startSession = async (
@@ -125,7 +123,6 @@ export const startSession = async (
 
 // ─────────────────────────────────────────────────────────────
 // PATCH /workouts/:id/exercises/:exerciseId/complete
-// User marks a single exercise as done during the session
 // ─────────────────────────────────────────────────────────────
 
 export const completeExercise = async (
@@ -154,8 +151,7 @@ export const completeExercise = async (
 
 // ─────────────────────────────────────────────────────────────
 // POST /workouts/:id/complete
-// User finishes session and answers the check-in question
-// Triggers memory update
+// Finish session + answer check-in + update memory
 // ─────────────────────────────────────────────────────────────
 
 export const completeSession = async (
@@ -192,7 +188,6 @@ export const completeSession = async (
 
 // ─────────────────────────────────────────────────────────────
 // PATCH /workouts/:id/skip
-// User skips today's session
 // ─────────────────────────────────────────────────────────────
 
 export const skipSession = async (
@@ -217,7 +212,6 @@ export const skipSession = async (
 
 // ─────────────────────────────────────────────────────────────
 // GET /workouts
-// Get all workouts for user (with optional filters)
 // ─────────────────────────────────────────────────────────────
 
 export const getUserWorkouts = async (
@@ -235,10 +229,7 @@ export const getUserWorkouts = async (
       },
     );
 
-    res.status(200).json({
-      success: true,
-      data: workouts,
-    });
+    res.status(200).json({ success: true, data: workouts });
   } catch (err: any) {
     res.status(500).json({ success: false, message: err.message });
   }
@@ -246,7 +237,6 @@ export const getUserWorkouts = async (
 
 // ─────────────────────────────────────────────────────────────
 // GET /workouts/today
-// Get today's workout (if any)
 // ─────────────────────────────────────────────────────────────
 
 export const getTodaysWorkout = async (
@@ -259,17 +249,13 @@ export const getTodaysWorkout = async (
     );
 
     if (!workout) {
-      res.status(404).json({
-        success: false,
-        message: "No workout found for today",
-      });
+      res
+        .status(404)
+        .json({ success: false, message: "No workout found for today" });
       return;
     }
 
-    res.status(200).json({
-      success: true,
-      data: workout,
-    });
+    res.status(200).json({ success: true, data: workout });
   } catch (err: any) {
     res.status(500).json({ success: false, message: err.message });
   }
@@ -277,7 +263,6 @@ export const getTodaysWorkout = async (
 
 // ─────────────────────────────────────────────────────────────
 // GET /workouts/:id
-// Get a single workout by ID
 // ─────────────────────────────────────────────────────────────
 
 export const getWorkout = async (
@@ -303,7 +288,6 @@ export const getWorkout = async (
 
 // ─────────────────────────────────────────────────────────────
 // DELETE /workouts/:id
-// Delete a pending workout
 // ─────────────────────────────────────────────────────────────
 
 export const deleteWorkout = async (
