@@ -18,6 +18,7 @@ import { ExerciseBlockRoutes } from "../modules/exerciseBlock/exerciseBlock.rout
 import { ExerciseStepRoutes } from "../modules/exerciseStep/exerciseStep.route";
 import { TrainerKnowledgePackRoutes } from "../modules/trainerKnowladge/trainerKnowladge.route";
 import { TrainerRoutes } from "../modules/trainer/trainer.route";
+import { ChatRoutes } from "../modules/chat/chat.route";
 
 // import { PaymentRoute } from "../modules/unused_payments/payment.route";
 
@@ -30,7 +31,9 @@ export const routesConfig = [
   { path: "trainerKnowladge", handler: TrainerKnowledgePackRoutes },
   { path: "exercise", handler: ExerciseRoutes },
   { path: "exerciseBlock", handler: ExerciseBlockRoutes },
-  { path: "exerciseSteps", handler: ExerciseStepRoutes },
+  { path: "exercise-steps", handler: ExerciseStepRoutes },
+  { path: "block", handler: ExerciseBlockRoutes },
+  { path: "chat", handler: ChatRoutes },
 
   { path: "terms", handler: TermsRoutes },
   { path: "about", handler: AboutRoutes },
