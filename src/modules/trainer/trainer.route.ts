@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { guardRole } from "../../middlewares/roleGuard";
-import { protect, trainerOnly } from "../../middlewares/auth";
+import { trainerOnly } from "../../middlewares/auth";
 import {
   getAllTrainers,
   getTrainer,
@@ -13,10 +13,6 @@ import {
 } from "./trainer.controller";
 import { trainerBlockSubRoutes } from "../exerciseBlock/exerciseBlock.route";
 import { TrainerKnowledgePackRoutes } from "../trainerKnowladge/trainerKnowladge.route";
-
-// Block sub-routes (create, generate, approve, update, delete blocks)
-
-// Knowledge pack sub-routes
 
 const router = Router();
 
@@ -44,7 +40,7 @@ router.post("/", guardRole(["trainer"]), createTrainer);
 router.put("/:id", guardRole(["trainer"]), updateTrainer);
 
 // DELETE /trainers/:id
-router.delete("/:id", protect as any, trainerOnly as any, deleteTrainer);
+router.delete("/:id", trainerOnly as any, deleteTrainer);
 
 // ── Nested: /trainers/:id/blocks/...  ─────────────────────────
 // POST   /trainers/:id/blocks

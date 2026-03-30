@@ -23,7 +23,7 @@ router.get("/:blockId", getBlock);
 // DELETE /blocks/:blockId/exercises/:exerciseId
 router.use("/:blockId/exercises", ExerciseRoutes);
 
-export const ExerciseBlockRoutes = router;
+export const ExerciseBlockStandaloneRoutes = router;
 
 // ── Routes nested under /trainers/:id/blocks ──────────────────
 // These are exported separately to be mounted inside TrainerRoutes
@@ -61,5 +61,4 @@ trainerBlockSubRoutes.delete(
   deleteExerciseBlock,
 );
 
-// Nest exercise routes: /trainers/:id/blocks/:blockId/exercises
-trainerBlockSubRoutes.use("/:blockId/exercises", ExerciseRoutes);
+export const ExerciseBlockRoutes = trainerBlockSubRoutes;

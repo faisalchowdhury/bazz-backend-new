@@ -1,17 +1,16 @@
 import { ExerciseBlockModel } from "./exerciseBlock.model";
 import { IExerciseBlock } from "./exerciseBlock.interface";
-
+import {
+  getExercisesByBlock,
+  bulkCreateExercises,
+  deleteExercisesByBlock,
+  approveExercisesByBlock,
+} from "../exercise/exercise.service";
 import {
   callAI,
   buildExerciseBlockGenerationPrompt,
 } from "../../services/ai.service";
 import { TrainerModel } from "../trainer/trainer.model";
-import {
-  approveExercisesByBlock,
-  bulkCreateExercises,
-  deleteExercisesByBlock,
-  getExercisesByBlock,
-} from "../exercise/exercise.service";
 
 // ── Get all blocks for a trainer (with exercises + steps) ──────
 export const getBlocksByTrainer = async (
@@ -58,17 +57,19 @@ export const createBlock = async (
     isApproved: true,
   });
 
+  const blockId = String((block as any)._id);
+
   // Create exercises if provided in the body
   if (exercises && exercises.length > 0) {
     await bulkCreateExercises(
-      (block._id as string | { toString(): string }).toString(),
+      blockId,
       trainerId,
       exercises,
       false,
     );
   }
 
-  return getBlockById((block._id as string).toString());
+  return getBlockById(blockId);
 };
 
 // ── Generate block with AI ────────────────────────────────────
@@ -122,17 +123,19 @@ export const generateBlockWithAI = async (
     isApproved: false, // ← trainer must approve
   });
 
+  const blockId = String((block as any)._id);
+
   // 2. Create exercises + steps in separate collections
   if (generated.exercises && generated.exercises.length > 0) {
     await bulkCreateExercises(
-      (block._id as string).toString(),
+      blockId,
       trainerId,
       generated.exercises,
       true, // isAiGenerated = true
     );
   }
 
-  return getBlockById((block._id as string).toString());
+  return getBlockById(blockId);
 };
 
 // ── Approve block + all its exercises ────────────────────────

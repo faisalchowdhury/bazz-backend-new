@@ -1,17 +1,73 @@
-import express from "express";
+import { Router } from "express";
+import { protect } from "../../middlewares/auth";
 import { guardRole } from "../../middlewares/roleGuard";
-import { createContent, getMyVideos, getvideo } from "./content.controller";
-import upload from "../../multer/multer";
-
-const route = express.Router();
-
-route.post(
-  "/create-content",
-  guardRole("trainer"),
-  upload.single("video"),
+import {
+  createCategory,
+  getCategories,
+  getCategoryById,
+  updateCategory,
+  deleteCategory,
   createContent,
+  getContent,
+  getContentById,
+  updateContent,
+  publishContent,
+  deleteContent,
+} from "./content.controller";
+
+const router = Router();
+
+// ── Category Routes ───────────────────────────────────────────
+
+// Public — users can browse categories
+router.get("/categories", getCategories);
+router.get("/categories/:id", getCategoryById);
+
+// Trainer only
+router.post(
+  "/categories",
+
+  guardRole(["trainer"]),
+  createCategory,
+);
+router.put(
+  "/categories/:id",
+
+  guardRole(["trainer"]),
+  updateCategory,
+);
+router.delete(
+  "/categories/:id",
+
+  guardRole(["trainer"]),
+  deleteCategory,
 );
 
-route.get("/my-videos", guardRole(["trainer"]), getMyVideos);
-route.get("/video/:contentId", guardRole(["trainer"]), getvideo);
-export const ContentRoutes = route;
+// ── Content Routes ────────────────────────────────────────────
+
+// Public — users can browse + watch published content
+router.get("/content", getContent);
+router.get("/content/:id", getContentById);
+
+// Trainer only
+router.post("/content", guardRole(["trainer"]), createContent);
+router.put(
+  "/content/:id",
+
+  guardRole(["trainer"]),
+  updateContent,
+);
+router.patch(
+  "/content/:id/publish",
+
+  guardRole(["trainer"]),
+  publishContent,
+);
+router.delete(
+  "/content/:id",
+
+  guardRole(["trainer"]),
+  deleteContent,
+);
+
+export const ContentRoutes = router;

@@ -1,8 +1,7 @@
 import { TrainerModel } from "./trainer.model";
 import { ITrainer } from "./trainer.interface";
-
 import { getBlocksByTrainer } from "../exerciseBlock/exerciseBlock.service";
-import { getKnowledgePackService } from "../trainerKnowladge/trainerKnowladge.service";
+import { getKnowledgePackService } from "../trainerKnowledge/trainerKnowledge.service";
 
 // ─────────────────────────────────────────────────────────────
 // GET ALL TRAINERS (browse / discovery)

@@ -1,96 +1,199 @@
 import { Request, Response } from "express";
+import { JwtPayloadWithUser } from "../../middlewares/userVerification";
 import {
-  createCategoryIntoDB,
-  deleteCategoryFromDB,
-  getAllCategoriesFromDB,
-  getSingleCategoryFromDB,
-  updateCategoryIntoDB,
+  createCategoryService,
+  getCategoriesService,
+  getCategoryByIdService,
+  getCategoryBySlugService,
+  updateCategoryService,
+  deleteCategoryService,
+  getMyCategories,
 } from "./category.service";
 
-// Create Category
-export const createCategory = async (req: Request, res: Response) => {
-  try {
-    const result = await createCategoryIntoDB(req.body);
+// ─────────────────────────────────────────────────────────────
+// POST /categories
+// Trainer creates a new category
+// ─────────────────────────────────────────────────────────────
 
-    res.status(201).json({
-      success: true,
-      message: "Category created successfully",
-      data: result,
+export const createCategory = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  try {
+    const user = req.user as JwtPayloadWithUser;
+
+    const { category, slug, description } = req.body;
+    if (!category || !slug) {
+      res.status(400).json({
+        success: false,
+        message: "category and slug are required",
+      });
+      return;
+    }
+
+    const result = await createCategoryService(user.id, {
+      category,
+      slug,
+      description,
     });
-  } catch (error: any) {
-    res.status(400).json({
-      success: false,
-      message: error.message,
-    });
+
+    res.status(201).json({ success: true, data: result });
+  } catch (err: any) {
+    res.status(400).json({ success: false, message: err.message });
   }
 };
 
-// Get All Categories
-export const getAllCategories = async (req: Request, res: Response) => {
-  try {
-    const result = await getAllCategoriesFromDB();
+// ─────────────────────────────────────────────────────────────
+// GET /categories?trainerId=&isActive=
+// Public — users browse categories for a trainer
+// ─────────────────────────────────────────────────────────────
 
-    res.status(200).json({
-      success: true,
-      data: result,
+export const getCategories = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  try {
+    const { trainerId, isActive } = req.query;
+
+    if (!trainerId) {
+      res.status(400).json({
+        success: false,
+        message: "trainerId is required",
+      });
+      return;
+    }
+
+    const result = await getCategoriesService(trainerId as string, {
+      isActive: isActive !== undefined ? isActive === "true" : true,
     });
-  } catch (error: any) {
-    res.status(400).json({
-      success: false,
-      message: error.message,
-    });
+
+    res.status(200).json({ success: true, data: result });
+  } catch (err: any) {
+    res.status(500).json({ success: false, message: err.message });
   }
 };
 
-// Get Single Category
-export const getSingleCategory = async (req: Request, res: Response) => {
-  try {
-    const result = await getSingleCategoryFromDB(req.params.id);
+// ─────────────────────────────────────────────────────────────
+// GET /categories/my
+// Trainer dashboard — get own categories using token (no trainerId needed)
+// ─────────────────────────────────────────────────────────────
 
-    res.status(200).json({
-      success: true,
-      data: result,
-    });
-  } catch (error: any) {
-    res.status(400).json({
-      success: false,
-      message: error.message,
-    });
+export const getMyCategoriesController = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  try {
+    const user = req.user as JwtPayloadWithUser;
+    const result = await getMyCategories(user.id);
+    res.status(200).json({ success: true, data: result });
+  } catch (err: any) {
+    res.status(500).json({ success: false, message: err.message });
   }
 };
 
-// Update Category
-export const updateCategory = async (req: Request, res: Response) => {
-  try {
-    const result = await updateCategoryIntoDB(req.params.id, req.body);
+// ─────────────────────────────────────────────────────────────
+// GET /categories/:id?trainerId=
+// Public — get single category by MongoDB _id
+// ─────────────────────────────────────────────────────────────
 
-    res.status(200).json({
-      success: true,
-      message: "Category updated successfully",
-      data: result,
-    });
-  } catch (error: any) {
-    res.status(400).json({
-      success: false,
-      message: error.message,
-    });
+export const getCategoryById = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  try {
+    const { trainerId } = req.query;
+
+    if (!trainerId) {
+      res.status(400).json({
+        success: false,
+        message: "trainerId is required",
+      });
+      return;
+    }
+
+    const result = await getCategoryByIdService(
+      req.params.id,
+      trainerId as string,
+    );
+
+    res.status(200).json({ success: true, data: result });
+  } catch (err: any) {
+    res.status(404).json({ success: false, message: err.message });
   }
 };
 
-// Delete Category
-export const deleteCategory = async (req: Request, res: Response) => {
-  try {
-    const result = await deleteCategoryFromDB(req.params.id);
+// ─────────────────────────────────────────────────────────────
+// GET /categories/slug/:slug?trainerId=
+// Public — get category by slug (useful for frontend routing)
+// ─────────────────────────────────────────────────────────────
 
-    res.status(200).json({
-      success: true,
-      message: "Category deleted successfully",
-      data: result,
+export const getCategoryBySlug = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  try {
+    const { trainerId } = req.query;
+
+    if (!trainerId) {
+      res.status(400).json({
+        success: false,
+        message: "trainerId is required",
+      });
+      return;
+    }
+
+    const result = await getCategoryBySlugService(
+      req.params.slug,
+      trainerId as string,
+    );
+
+    res.status(200).json({ success: true, data: result });
+  } catch (err: any) {
+    res.status(404).json({ success: false, message: err.message });
+  }
+};
+
+// ─────────────────────────────────────────────────────────────
+// PUT /categories/:id
+// Trainer updates a category — FIXED version
+// ─────────────────────────────────────────────────────────────
+
+export const updateCategory = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  try {
+    const user = req.user as JwtPayloadWithUser;
+
+    const { category, slug, description, isActive } = req.body;
+
+    const result = await updateCategoryService(user.id, req.params.id, {
+      category,
+      slug,
+      description,
+      isActive,
     });
-  } catch (error: any) {
-    res.status(400).json({
-      success: false,
-      message: error.message,
-    });
+
+    res.status(200).json({ success: true, data: result });
+  } catch (err: any) {
+    res.status(400).json({ success: false, message: err.message });
+  }
+};
+
+// ─────────────────────────────────────────────────────────────
+// DELETE /categories/:id
+// Trainer soft-deletes a category (sets isActive: false)
+// ─────────────────────────────────────────────────────────────
+
+export const deleteCategory = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  try {
+    const user = req.user as JwtPayloadWithUser;
+    await deleteCategoryService(user.id, req.params.id);
+    res.status(200).json({ success: true, message: "Category deleted" });
+  } catch (err: any) {
+    res.status(400).json({ success: false, message: err.message });
   }
 };

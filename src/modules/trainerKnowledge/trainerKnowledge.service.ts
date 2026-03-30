@@ -1,13 +1,13 @@
-import { ITrainerKnowledgePack } from "./trainerKnowladge.interface";
-import { TrainerKnowledgePackModel } from "./trainerKnowladge.model";
+import { ITrainerKnowledgePack } from "./trainerKnowledge.interface";
+import { TrainerKnowledgePackModel } from "./trainerKnowledge.model";
 
 // ── Get knowledge pack for a trainer ──────────────────────────
-export const getKnowledgePack = async (trainerId: string) => {
+export const getKnowledgePackService = async (trainerId: string) => {
   return await TrainerKnowledgePackModel.findOne({ trainerId }).lean();
 };
 
 // ── Create knowledge pack (first time setup) ──────────────────
-export const createKnowledgePack = async (
+export const createKnowledgePackService = async (
   trainerId: string,
   data: Partial<ITrainerKnowledgePack>,
 ) => {
@@ -19,7 +19,7 @@ export const createKnowledgePack = async (
 };
 
 // ── Upsert knowledge pack (create or update in one call) ──────
-export const upsertKnowledgePack = async (
+export const upsertKnowledgePackService = async (
   trainerId: string,
   data: Partial<ITrainerKnowledgePack>,
 ) => {
@@ -31,7 +31,7 @@ export const upsertKnowledgePack = async (
 };
 
 // ── Update knowledge pack ──────────────────────────────────────
-export const updateKnowledgePack = async (
+export const updateKnowledgePackService = async (
   trainerId: string,
   updates: Partial<ITrainerKnowledgePack>,
 ) => {
@@ -45,7 +45,7 @@ export const updateKnowledgePack = async (
 };
 
 // ── Delete knowledge pack ──────────────────────────────────────
-export const deleteKnowledgePack = async (trainerId: string) => {
+export const deleteKnowledgePackService = async (trainerId: string) => {
   await TrainerKnowledgePackModel.findOneAndDelete({ trainerId });
   return { message: "Knowledge pack deleted" };
 };

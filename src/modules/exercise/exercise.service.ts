@@ -38,20 +38,20 @@ export const createExercise = async (
 ) => {
   const { steps, ...exerciseData } = data;
 
-  const exercise = (await ExerciseModel.create({
+  const exercise = await ExerciseModel.create({
     blockId,
     trainerId,
     ...exerciseData,
     isAiGenerated: false,
     isApproved: true,
-  })) as IExercise & { _id: string };
+  });
 
   // Create steps if provided
   if (steps && steps.length > 0) {
-    await bulkCreateSteps(exercise._id.toString(), steps);
+    await bulkCreateSteps((exercise as any)._id.toString(), steps);
   }
 
-  return getExerciseById(exercise._id.toString());
+  return getExerciseById((exercise as any)._id.toString());
 };
 
 // ── Bulk create exercises + steps (used by AI block generation) ─
@@ -66,19 +66,19 @@ export const bulkCreateExercises = async (
   for (const ex of exercises) {
     const { steps, ...exerciseData } = ex;
 
-    const exercise = (await ExerciseModel.create({
+    const exercise = await ExerciseModel.create({
       blockId,
       trainerId,
       ...exerciseData,
       isAiGenerated,
       isApproved: !isAiGenerated, // AI-generated → needs approval
-    })) as IExercise & { _id: string };
+    });
 
     if (steps && steps.length > 0) {
-      await bulkCreateSteps(exercise._id.toString(), steps);
+      await bulkCreateSteps((exercise as any)._id.toString(), steps);
     }
 
-    created.push(exercise._id);
+    created.push((exercise as any)._id);
   }
 
   return created;

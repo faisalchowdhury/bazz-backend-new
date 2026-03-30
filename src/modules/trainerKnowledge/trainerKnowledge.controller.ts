@@ -5,7 +5,7 @@ import {
   getKnowledgePackService,
   updateKnowledgePackService,
   upsertKnowledgePackService,
-} from "../trainerKnowledge/trainerKnowledge.service";
+} from "./trainerKnowledge.service";
 
 // GET /trainers/:id/knowledge-pack
 export const getKnowledgePack = async (

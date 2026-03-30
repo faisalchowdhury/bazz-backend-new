@@ -7,16 +7,16 @@ import {
   deleteStep,
 } from "./exerciseStep.controller";
 
-const router = Router(); // mergeParams to get :exerciseId from parent
+const router = Router({ mergeParams: true }); // mergeParams to get :exerciseId from parent
 
-// GET    /exercise/:exerciseId/steps
-// POST   /exercise/:exerciseId/steps
-// PUT    /exercise/:exerciseId/steps/:stepId
-// DELETE /exercise/:exerciseId/steps/:stepId
+// GET    /exercises/:exerciseId/steps
+// POST   /exercises/:exerciseId/steps
+// PUT    /exercises/:exerciseId/steps/:stepId
+// DELETE /exercises/:exerciseId/steps/:stepId
 
-router.get("/:exerciseId/steps", getSteps);
-router.post("/:exerciseId/steps", guardRole(["trainer"]), createStep);
-router.put("/:exerciseId/steps/:stepId", guardRole(["trainer"]), updateStep);
-router.delete("/:exerciseId/steps/:stepId", guardRole(["trainer"]), deleteStep);
+router.get("/", getSteps);
+router.post("/", guardRole(["trainer"]), createStep);
+router.put("/:stepId", guardRole(["trainer"]), updateStep);
+router.delete("/:stepId", guardRole(["trainer"]), deleteStep);
 
 export const ExerciseStepRoutes = router;

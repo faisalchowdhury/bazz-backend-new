@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(rename *)",
+      "Bash(move *)",
+      "Bash(dir *)"
+    ]
+  },
+  "$version": 3
+}

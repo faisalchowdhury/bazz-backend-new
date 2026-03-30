@@ -8,9 +8,8 @@ import {
   updateTrainerService,
   deleteTrainerService,
 } from "./trainer.service";
-
-import { JwtPayloadWithUser } from "../../middlewares/userVerification";
 import { getBlocksByTrainer } from "../exerciseBlock/exerciseBlock.service";
+import { JwtPayloadWithUser } from "../../middlewares/userVerification";
 
 // ─────────────────────────────────────────────────────────────
 // GET /trainers

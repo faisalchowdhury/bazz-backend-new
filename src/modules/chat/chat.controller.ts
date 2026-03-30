@@ -20,8 +20,7 @@ export const sendChatMessage = async (
   res: Response,
 ): Promise<void> => {
   try {
-    const user = req.user as JwtPayloadWithUser;
-    const userId = user.id;
+    const userId = (req as any).user._id.toString();
     const { message, trainerId, workoutContext } = req.body;
 
     if (!message || message.trim() === "") {
@@ -63,8 +62,7 @@ export const getChatHistoryController = async (
   res: Response,
 ): Promise<void> => {
   try {
-    const user = req.user as JwtPayloadWithUser;
-    const userId = user.id;
+    const userId = (req as any).user._id.toString();
     const { trainerId, page, limit } = req.query;
 
     const chatType = trainerId ? "trainer" : "default_plan";
@@ -93,8 +91,7 @@ export const getChatThreads = async (
   res: Response,
 ): Promise<void> => {
   try {
-    const user = req.user as JwtPayloadWithUser;
-    const userId = user.id;
+    const userId = (req as any).user._id.toString();
     const threads = await getUserChatThreads(userId);
 
     res.status(200).json({ success: true, data: threads });
@@ -138,8 +135,7 @@ export const clearHistory = async (
   res: Response,
 ): Promise<void> => {
   try {
-    const user = req.user as JwtPayloadWithUser;
-    const userId = user.id;
+    const userId = (req as any).user._id.toString();
     const { trainerId } = req.query;
 
     const chatType = trainerId ? "trainer" : "default_plan";
@@ -162,8 +158,7 @@ export const deleteThread = async (
   res: Response,
 ): Promise<void> => {
   try {
-    const user = req.user as JwtPayloadWithUser;
-    const userId = user.id;
+    const userId = (req as any).user._id.toString();
     await deleteChatThread(userId, req.params.chatId);
 
     res.status(200).json({ success: true, message: "Chat thread deleted" });
