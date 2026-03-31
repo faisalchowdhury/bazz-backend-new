@@ -20,7 +20,8 @@ export const sendChatMessage = async (
   res: Response,
 ): Promise<void> => {
   try {
-    const userId = (req as any).user._id.toString();
+    const user = req.user as JwtPayloadWithUser;
+    const userId = user.id;
     const { message, trainerId, workoutContext } = req.body;
 
     if (!message || message.trim() === "") {
