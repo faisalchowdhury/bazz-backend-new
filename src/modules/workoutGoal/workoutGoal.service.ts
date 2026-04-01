@@ -15,7 +15,32 @@ import {
   getTrainerSystemPrompt,
   summarizeSessionMemory,
 } from "../../services/ai.service";
+// Safely converts AI output to a number (1-10) or null
+// Handles cases where AI returns "great", "high", "7/10", "8" etc.
+const toNumberOrNull = (value: any): number | null => {
+  if (value === null || value === undefined) return null;
 
+  // Already a valid number
+  if (typeof value === "number" && !isNaN(value)) {
+    return Math.min(10, Math.max(1, Math.round(value)));
+  }
+
+  // Try parsing string like "8", "7/10", "8.5"
+  if (typeof value === "string") {
+    // Handle "7/10" format
+    const slashMatch = value.match(/^(\d+)\s*\/\s*10$/);
+    if (slashMatch) return parseInt(slashMatch[1]);
+
+    // Handle plain number string
+    const parsed = parseFloat(value);
+    if (!isNaN(parsed)) {
+      return Math.min(10, Math.max(1, Math.round(parsed)));
+    }
+  }
+
+  // AI returned a word — return null, don't crash
+  return null;
+};
 // ─────────────────────────────────────────────────────────────
 // CREATE WORKOUT PREFERENCES
 // User fills the form — status: "pending", aiPlan: null
@@ -262,7 +287,7 @@ export const completeSessionService = async (
   const workout = await WorkoutModel.findOne({ _id: workoutId, userId });
   if (!workout) throw new Error("Workout not found");
   if (!workout.aiPlan) throw new Error("No AI plan found");
-
+  console.log(workout);
   // 1. Mark session complete
   workout.status = "completed";
   workout.completedAt = new Date();
@@ -323,9 +348,9 @@ Exercises completed: ${exerciseNames || "none logged"}
     exercisesCompleted: exerciseNames.split(", ").filter(Boolean),
     loadsUsed: memoryUpdate.session_summary?.loadsUsed || {},
     adherence: memoryUpdate.session_summary?.adherence || "completed",
-    rpe: memoryUpdate.session_summary?.rpe,
+    rpe: toNumberOrNull(memoryUpdate.session_summary?.rpe), // ← sanitize
     painNotes: memoryUpdate.session_summary?.painNotes,
-    energyLevel: memoryUpdate.session_summary?.energyLevel,
+    energyLevel: toNumberOrNull(memoryUpdate.session_summary?.energyLevel), // ← sanitize
     flags: memoryUpdate.flags || [],
   };
 
@@ -356,7 +381,7 @@ Exercises completed: ${exerciseNames || "none logged"}
       rpe: e.actualRpe,
       completed: e.isCompleted,
     })),
-    sessionRpe: memoryUpdate.session_summary?.rpe,
+    sessionRpe: toNumberOrNull(memoryUpdate.session_summary?.rpe),
     durationMinutes: actualDurationMinutes,
     aiPlanUsed: true,
     notes: checkInResponse,

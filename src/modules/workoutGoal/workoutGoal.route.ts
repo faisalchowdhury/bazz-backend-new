@@ -49,6 +49,6 @@ router.patch(
   completeExercise,
 );
 router.post("/:id/complete", guardRole("user"), completeSession);
-router.patch("/:id/skip", skipSession);
+router.patch("/:id/skip", guardRole("user"), skipSession);
 
 export const WorkoutRoutes = router;

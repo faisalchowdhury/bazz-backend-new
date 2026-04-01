@@ -192,7 +192,8 @@ export const skipSession = async (
 ): Promise<void> => {
   try {
     const userId = (req.user as JwtPayloadWithUser).id;
-    const workout = await skipSessionService(userId, req.params.id);
+    const wordoutId = req.params.id;
+    const workout = await skipSessionService(userId, wordoutId);
 
     res.status(200).json({
       success: true,
