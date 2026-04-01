@@ -11,6 +11,7 @@ import {
   skipSessionService,
   startSessionService,
 } from "./workoutGoal.service";
+import { JwtPayloadWithUser } from "../../middlewares/userVerification";
 
 // ─────────────────────────────────────────────────────────────
 // POST /workouts
@@ -32,6 +33,7 @@ export const createWorkout = async (
       date,
     } = req.body;
 
+    const userId = (req.user as JwtPayloadWithUser).id;
     if (
       !goal ||
       !focusArea ||
@@ -49,18 +51,15 @@ export const createWorkout = async (
       return;
     }
 
-    const workout = await createWorkoutPreferences(
-      (req as any).user._id.toString(),
-      {
-        goal,
-        focusArea,
-        workout_environment,
-        equipment_availablity,
-        workout_intensity,
-        duration,
-        date,
-      },
-    );
+    const workout = await createWorkoutPreferences(userId, {
+      goal,
+      focusArea,
+      workout_environment,
+      equipment_availablity,
+      workout_intensity,
+      duration,
+      date,
+    });
 
     res.status(201).json({
       success: true,
@@ -82,10 +81,8 @@ export const generatePlan = async (
   res: Response,
 ): Promise<void> => {
   try {
-    const workout = await generateAIPlan(
-      (req as any).user._id.toString(),
-      req.params.id,
-    );
+    const userId = (req.user as JwtPayloadWithUser).id;
+    const workout = await generateAIPlan(userId, req.params.id);
 
     res.status(200).json({
       success: true,
@@ -106,10 +103,8 @@ export const startSession = async (
   res: Response,
 ): Promise<void> => {
   try {
-    const workout = await startSessionService(
-      (req as any).user._id.toString(),
-      req.params.id,
-    );
+    const userId = (req.user as JwtPayloadWithUser).id;
+    const workout = await startSessionService(userId, req.params.id);
 
     res.status(200).json({
       success: true,
@@ -130,10 +125,11 @@ export const completeExercise = async (
   res: Response,
 ): Promise<void> => {
   try {
+    const userId = (req.user as JwtPayloadWithUser).id;
     const { completedSets, actualWeight, actualRpe, notes } = req.body;
 
     const workout = await completeExerciseService(
-      (req as any).user._id.toString(),
+      userId,
       req.params.id,
       req.params.exerciseId,
       { completedSets, actualWeight, actualRpe, notes },
@@ -160,7 +156,7 @@ export const completeSession = async (
 ): Promise<void> => {
   try {
     const { checkInResponse, actualDurationMinutes } = req.body;
-
+    const userId = (req.user as JwtPayloadWithUser).id;
     if (!checkInResponse) {
       res.status(400).json({
         success: false,
@@ -170,7 +166,7 @@ export const completeSession = async (
     }
 
     const result = await completeSessionService(
-      (req as any).user._id.toString(),
+      userId,
       req.params.id,
       checkInResponse,
       actualDurationMinutes,
@@ -195,10 +191,8 @@ export const skipSession = async (
   res: Response,
 ): Promise<void> => {
   try {
-    const workout = await skipSessionService(
-      (req as any).user._id.toString(),
-      req.params.id,
-    );
+    const userId = (req.user as JwtPayloadWithUser).id;
+    const workout = await skipSessionService(userId, req.params.id);
 
     res.status(200).json({
       success: true,
@@ -220,14 +214,11 @@ export const getUserWorkouts = async (
 ): Promise<void> => {
   try {
     const { status, limit } = req.query;
-
-    const workouts = await getUserWorkoutsService(
-      (req as any).user._id.toString(),
-      {
-        status: status as string | undefined,
-        limit: limit ? parseInt(limit as string) : 20,
-      },
-    );
+    const userId = (req.user as JwtPayloadWithUser).id;
+    const workouts = await getUserWorkoutsService(userId, {
+      status: status as string | undefined,
+      limit: limit ? parseInt(limit as string) : 20,
+    });
 
     res.status(200).json({ success: true, data: workouts });
   } catch (err: any) {
@@ -244,9 +235,8 @@ export const getTodaysWorkout = async (
   res: Response,
 ): Promise<void> => {
   try {
-    const workout = await getTodaysWorkoutService(
-      (req as any).user._id.toString(),
-    );
+    const userId = (req.user as JwtPayloadWithUser).id;
+    const workout = await getTodaysWorkoutService(userId);
 
     if (!workout) {
       res
@@ -270,10 +260,8 @@ export const getWorkout = async (
   res: Response,
 ): Promise<void> => {
   try {
-    const workout = await getWorkoutByIdService(
-      (req as any).user._id.toString(),
-      req.params.id,
-    );
+    const userId = (req.user as JwtPayloadWithUser).id;
+    const workout = await getWorkoutByIdService(userId, req.params.id);
 
     if (!workout) {
       res.status(404).json({ success: false, message: "Workout not found" });
@@ -295,7 +283,8 @@ export const deleteWorkout = async (
   res: Response,
 ): Promise<void> => {
   try {
-    await deleteWorkoutService((req as any).user._id.toString(), req.params.id);
+    const userId = (req.user as JwtPayloadWithUser).id;
+    await deleteWorkoutService(userId, req.params.id);
 
     res.status(200).json({ success: true, message: "Workout deleted" });
   } catch (err: any) {

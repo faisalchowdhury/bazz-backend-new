@@ -1160,7 +1160,9 @@ export const getProfile = async (
   res: Response,
 ): Promise<void> => {
   try {
-    const user = await getUserProfile((req as any).user._id.toString());
+    const userId = (req.user as JwtPayloadWithUser).id;
+
+    const user = await getUserProfile(userId);
     if (!user) {
       res.status(404).json({ success: false, message: "User not found" });
       return;
@@ -1180,10 +1182,8 @@ export const updateProfile = async (
   res: Response,
 ): Promise<void> => {
   try {
-    const user = await updateUserProfile(
-      (req as any).user._id.toString(),
-      req.body,
-    );
+    const userId = (req.user as JwtPayloadWithUser).id;
+    const user = await updateUserProfile(userId, req.body);
     res.json({ success: true, data: user });
   } catch (err: any) {
     res.status(400).json({ success: false, message: err.message });
@@ -1199,10 +1199,8 @@ export const completeOnboarding = async (
   res: Response,
 ): Promise<void> => {
   try {
-    const result = await completeOnboardingService(
-      (req as any).user._id.toString(),
-      req.body,
-    );
+    const userId = (req.user as JwtPayloadWithUser).id;
+    const result = await completeOnboardingService(userId, req.body);
     res.json({
       success: true,
       message: `Welcome! You've been matched with ${result.assignedTrainer.name}`,
@@ -1224,10 +1222,8 @@ export const subscribeToTrainer = async (
   res: Response,
 ): Promise<void> => {
   try {
-    const user = await subscribeToTrainerService(
-      (req as any).user._id.toString(),
-      req.params.trainerId,
-    );
+    const userId = (req.user as JwtPayloadWithUser).id;
+    const user = await subscribeToTrainerService(userId, req.params.trainerId);
     res.json({ success: true, message: "Subscribed successfully", data: user });
   } catch (err: any) {
     res.status(400).json({ success: false, message: err.message });
@@ -1243,11 +1239,9 @@ export const getHistory = async (
   res: Response,
 ): Promise<void> => {
   try {
+    const userId = (req.user as JwtPayloadWithUser).id;
     const limit = parseInt(req.query.limit as string) || 10;
-    const history = await getUserWorkoutHistory(
-      (req as any).user._id.toString(),
-      limit,
-    );
+    const history = await getUserWorkoutHistory(userId, limit);
     res.json({ success: true, data: history });
   } catch (err: any) {
     res.status(500).json({ success: false, message: err.message });
@@ -1260,10 +1254,10 @@ export const getHistory = async (
 
 export const getMemory = async (req: Request, res: Response): Promise<void> => {
   try {
-    const memory = await getUserMemory(
-      (req as any).user._id.toString(),
-      req.params.trainerId,
-    );
+    const user = req.user as JwtPayloadWithUser;
+    const userId = user.id;
+
+    const memory = await getUserMemory(userId, req.params.trainerId);
     res.json({ success: true, data: memory });
   } catch (err: any) {
     res.status(404).json({ success: false, message: err.message });

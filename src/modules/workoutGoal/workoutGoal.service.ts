@@ -232,11 +232,11 @@ export const completeExerciseService = async (
     ...(workout.aiPlan.accessories || []),
     ...(workout.aiPlan.finisher || []),
   ];
-
+  console.log(allExercises);
   const exercise = allExercises.find(
-    (e: any) => e._id.toString() === exerciseId,
+    (e: any) => e.exerciseId.toString() === exerciseId,
   ) as IPlannedExercise | undefined;
-
+  console.log(exercise);
   if (!exercise) throw new Error("Exercise not found in this session");
 
   exercise.isCompleted = true;
@@ -289,11 +289,11 @@ Goal: ${workout.goal.join(", ")}
 Intensity: ${workout.workout_intensity.join(", ")}
 Exercises completed: ${exerciseNames || "none logged"}
 `;
-
+  console.log(lastExchange);
   // 3. AI summarizes session into memory object
   const memoryUpdate = await summarizeSessionMemory(lastExchange);
   if (!memoryUpdate) return { workout, memoryUpdated: false };
-
+  console.log(memoryUpdate);
   // 4. Update user memory
   const user = await UserModel.findById(userId);
   if (!user || !workout.trainerId) return { workout, memoryUpdated: false };

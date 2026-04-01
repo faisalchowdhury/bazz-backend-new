@@ -1,11 +1,17 @@
 import express from "express";
 import {
   changePassword,
+  completeOnboarding,
   deleteUser,
   forgotPassword,
+  getHistory,
+  getMemory,
+  getProfile,
   getSelfInfo,
   loginUser,
   resetPassword,
+  subscribeToTrainer,
+  updateProfile,
   updateUser,
   uploadProfilePicture,
   UserController,
@@ -43,6 +49,13 @@ router.get("/my-profile", guardRole(["admin", "user"]), getSelfInfo);
 router.delete("/account-delete", guardRole(["admin", "user"]), deleteUser);
 router.post("/change-password", guardRole(["admin", "user"]), changePassword);
 router.post("/resend-otp", UserController.resendOTP);
+
+router.get("/me", guardRole("user"), getProfile);
+router.put("/me", guardRole("user"), updateProfile);
+router.post("/me/onboarding", guardRole("user"), completeOnboarding);
+router.post("/me/subscribe/:trainerId", guardRole("user"), subscribeToTrainer);
+router.get("/me/history", guardRole("user"), getHistory);
+router.get("/me/memory/:trainerId", guardRole("user"), getMemory);
 
 // router.get("/logout", guardRole(["admin", "company"]), logoutUser);
 

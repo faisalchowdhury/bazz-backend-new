@@ -61,12 +61,7 @@ export const createBlock = async (
 
   // Create exercises if provided in the body
   if (exercises && exercises.length > 0) {
-    await bulkCreateExercises(
-      blockId,
-      trainerId,
-      exercises,
-      false,
-    );
+    await bulkCreateExercises(blockId, trainerId, exercises, false);
   }
 
   return getBlockById(blockId);
@@ -101,7 +96,7 @@ export const generateBlockWithAI = async (
   const aiResponse = await callAI({
     systemPrompt: `You are a professional fitness programming assistant helping trainer ${trainer.name} build their exercise library. Output ONLY valid JSON. No explanation. No markdown. No backticks.`,
     userMessage: prompt,
-    maxTokens: 4000,
+    maxTokens: 10000,
   });
 
   // Parse AI response

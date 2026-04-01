@@ -92,7 +92,8 @@ export const getChatThreads = async (
   res: Response,
 ): Promise<void> => {
   try {
-    const userId = (req as any).user._id.toString();
+    const user = req.user as JwtPayloadWithUser;
+    const userId = user.id;
     const threads = await getUserChatThreads(userId);
 
     res.status(200).json({ success: true, data: threads });

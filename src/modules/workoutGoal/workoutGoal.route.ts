@@ -12,11 +12,11 @@ import {
   skipSession,
   startSession, // ← imported from controller, NOT from mongoose
 } from "./workoutGoal.controller";
+import { guardRole } from "../../middlewares/roleGuard";
 
 const router = Router();
 
 // All workout routes require authentication
-router.use(protect as any);
 
 // ── Workout preferences ───────────────────────────────────────
 // POST   /workouts              → save preferences (no AI yet)
@@ -25,16 +25,16 @@ router.use(protect as any);
 // GET    /workouts/:id          → get single workout
 // DELETE /workouts/:id          → delete pending workout
 
-router.post("/", createWorkout);
-router.get("/", getUserWorkouts);
-router.get("/today", getTodaysWorkout); // ← must stay before /:id
-router.get("/:id", getWorkout);
-router.delete("/:id", deleteWorkout);
+router.post("/", guardRole("user"), createWorkout);
+router.get("/", guardRole("user"), getUserWorkouts);
+router.get("/today", guardRole("user"), getTodaysWorkout); // ← must stay before /:id
+router.get("/:id", guardRole("user"), getWorkout);
+router.delete("/:id", guardRole("user"), deleteWorkout);
 
 // ── AI Plan generation ────────────────────────────────────────
 // POST /workouts/:id/generate → trigger AI to generate plan
 
-router.post("/:id/generate", generatePlan);
+router.post("/:id/generate", guardRole("user"), generatePlan);
 
 // ── Session lifecycle ─────────────────────────────────────────
 // PATCH  /workouts/:id/start
@@ -42,9 +42,13 @@ router.post("/:id/generate", generatePlan);
 // POST   /workouts/:id/complete
 // PATCH  /workouts/:id/skip
 
-router.patch("/:id/start", startSession);
-router.patch("/:id/exercises/:exerciseId/complete", completeExercise);
-router.post("/:id/complete", completeSession);
+router.patch("/:id/start", guardRole("user"), startSession);
+router.patch(
+  "/:id/exercises/:exerciseId/complete",
+  guardRole("user"),
+  completeExercise,
+);
+router.post("/:id/complete", guardRole("user"), completeSession);
 router.patch("/:id/skip", skipSession);
 
 export const WorkoutRoutes = router;
