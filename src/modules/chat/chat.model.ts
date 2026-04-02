@@ -11,6 +11,15 @@ const messageSchema = new Schema<IMessage>(
     content: { type: String, required: true },
     status: { type: String, enum: ["sent", "failed"], default: "sent" },
 
+    // NEW: which interface sent this message
+    // "text"      → normal chat message
+    // "anam_call" → message sent during an Anam AI video call session
+    source: {
+      type: String,
+      enum: ["text", "anam_call"],
+      default: "text",
+    },
+
     workoutContext: {
       workoutId: { type: Schema.Types.ObjectId, ref: "Workout" },
       focusArea: { type: String },
@@ -40,14 +49,12 @@ const chatSchema = new Schema<IChat>(
       ref: "Trainer",
     },
 
-    // "default_plan" → generic AI | "trainer" → trainer persona
     chatType: {
       type: String,
       enum: ["default_plan", "trainer"],
       required: true,
     },
 
-    // Snapshotted trainer persona — null for default plan users
     trainerPersona: {
       name: { type: String },
       specialty: { type: String },
@@ -64,8 +71,6 @@ const chatSchema = new Schema<IChat>(
 
 // ─────────────────────────────────────────────────────────────
 // INDEXES
-// One chat thread per user per trainer
-// One chat thread per user for default plan
 // ─────────────────────────────────────────────────────────────
 
 chatSchema.index({ userId: 1, trainerId: 1 }, { unique: true, sparse: true });

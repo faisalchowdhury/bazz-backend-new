@@ -7,8 +7,18 @@ export type TrainerSpecialty =
   | "nutrition"
   | "boxing";
 
+// ─────────────────────────────────────────────────────────────
+// ANAM AI PERSONA (new)
+// Trainer sets their personaId from Anam dashboard via app form
+// ─────────────────────────────────────────────────────────────
+
+export interface ITrainerAnamAI {
+  personaId: string; // from Anam AI dashboard
+  isEnabled: boolean; // true once personaId is set
+}
+
 export interface ITrainer extends Document {
-  userId: Types.ObjectId; // ref → User
+  userId: Types.ObjectId;
 
   // Human Brand Layer
   name: string;
@@ -18,8 +28,11 @@ export interface ITrainer extends Document {
   specialty: TrainerSpecialty;
   trainingStyleTags: string[];
 
-  // AI Layer — system prompt stored directly on trainer
+  // AI Layer
   systemPrompt?: string;
+
+  // Anam AI Integration (new)
+  anamAI?: ITrainerAnamAI;
 
   // Monetization
   subscriptionPrice: {
@@ -34,7 +47,4 @@ export interface ITrainer extends Document {
 
   createdAt: Date;
   updatedAt: Date;
-
-  // NOTE: knowledgePack, exerciseBlocks, exercises, steps
-  // all live in their own collections — referenced by trainerId
 }

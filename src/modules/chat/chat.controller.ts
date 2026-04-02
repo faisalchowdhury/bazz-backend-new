@@ -63,7 +63,7 @@ export const getChatHistoryController = async (
   res: Response,
 ): Promise<void> => {
   try {
-    const userId = (req as any).user._id.toString();
+    const userId = (req.user as JwtPayloadWithUser).id;
     const { trainerId, page, limit } = req.query;
 
     const chatType = trainerId ? "trainer" : "default_plan";

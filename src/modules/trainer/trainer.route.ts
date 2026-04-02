@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { guardRole } from "../../middlewares/roleGuard";
-import { trainerOnly } from "../../middlewares/auth";
+import { protect, trainerOnly } from "../../middlewares/auth";
 import {
   getAllTrainers,
   getTrainer,
@@ -11,54 +11,34 @@ import {
   updateTrainer,
   deleteTrainer,
 } from "./trainer.controller";
+import { removePersona, setPersonaId } from "../anam/anam.controller";
 import { trainerBlockSubRoutes } from "../exerciseBlock/exerciseBlock.route";
 import { TrainerKnowledgePackRoutes } from "../trainerKnowladge/trainerKnowladge.route";
 
 const router = Router();
 
 // ── Public routes ──────────────────────────────────────────────
-// GET /trainers
 router.get("/", getAllTrainers);
-
-// GET /trainers/specialty/:specialty   ← must be BEFORE /:id
-router.get("/specialty/:specialty", getTrainersBySpecialty);
-
-// GET /trainers/:id
+router.get("/specialty/:specialty", getTrainersBySpecialty); // before /:id
 router.get("/:id", getTrainer);
-
-// GET /trainers/:id/full  (trainer + knowledgePack + blocks + exercises + steps)
 router.get("/:id/full", getTrainerFull);
-
-// GET /trainers/:id/blocks
 router.get("/:id/blocks", getExerciseLibrary);
 
 // ── Protected trainer routes ───────────────────────────────────
-// POST /trainers
 router.post("/", guardRole(["trainer"]), createTrainer);
-
-// PUT /trainers/:id
 router.put("/:id", guardRole(["trainer"]), updateTrainer);
+router.delete("/:id", protect as any, trainerOnly as any, deleteTrainer);
 
-// DELETE /trainers/:id
-router.delete("/:id", trainerOnly as any, deleteTrainer);
+// ── Anam AI persona (new) ──────────────────────────────────────
+// PUT    /trainers/:id/anam   → trainer sets their personaId
+// DELETE /trainers/:id/anam   → trainer removes their persona
+router.put("/:id/anam", guardRole(["trainer"]), setPersonaId);
+router.delete("/:id/anam", guardRole(["trainer"]), removePersona);
 
-// ── Nested: /trainers/:id/blocks/...  ─────────────────────────
-// POST   /trainers/:id/blocks
-// POST   /trainers/:id/blocks/generate
-// PUT    /trainers/:id/blocks/:blockId/approve
-// PUT    /trainers/:id/blocks/:blockId
-// DELETE /trainers/:id/blocks/:blockId
-// POST   /trainers/:id/blocks/:blockId/exercises
-// PUT    /trainers/:id/blocks/:blockId/exercises/:exerciseId
-// DELETE /trainers/:id/blocks/:blockId/exercises/:exerciseId
+// ── Nested: blocks ────────────────────────────────────────────
 router.use("/:id/blocks", trainerBlockSubRoutes);
 
-// ── Nested: /trainers/:id/knowledge-pack/... ──────────────────
-// GET    /trainers/:id/knowledge-pack
-// POST   /trainers/:id/knowledge-pack
-// PUT    /trainers/:id/knowledge-pack
-// PATCH  /trainers/:id/knowledge-pack
-// DELETE /trainers/:id/knowledge-pack
+// ── Nested: knowledge-pack ────────────────────────────────────
 router.use("/:id/knowledge-pack", TrainerKnowledgePackRoutes);
 
 export const TrainerRoutes = router;

@@ -275,6 +275,7 @@ export const sendMessage = async (
     role: "user",
     content: payload.message,
     status: "sent",
+    source: "text",
     workoutContext: payload.workoutContext
       ? {
           workoutId: payload.workoutContext.workoutId
@@ -292,6 +293,7 @@ export const sendMessage = async (
     role: "assistant",
     content: aiResponseText,
     status: "sent",
+    source: "text",
     createdAt: new Date(),
   };
 

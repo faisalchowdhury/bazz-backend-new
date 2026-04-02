@@ -8,6 +8,11 @@ export type TMessageRole = "user" | "assistant";
 export type TChatType = "default_plan" | "trainer";
 export type TMessageStatus = "sent" | "failed";
 
+// NEW: tracks which interface the message came from
+// "text"      → normal chat message
+// "anam_call" → message during an Anam AI video call
+export type TMessageSource = "text" | "anam_call";
+
 // ─────────────────────────────────────────────────────────────
 // SINGLE MESSAGE
 // ─────────────────────────────────────────────────────────────
@@ -18,7 +23,10 @@ export interface IMessage {
   content: string;
   status: TMessageStatus;
 
-  // Optional workout context the user can attach
+  // NEW: which interface sent this message
+  source: TMessageSource;
+
+  // Optional workout context (text chat only)
   workoutContext?: {
     workoutId?: Types.ObjectId;
     focusArea?: string;
@@ -31,8 +39,7 @@ export interface IMessage {
 
 // ─────────────────────────────────────────────────────────────
 // CHAT THREAD
-// One thread per user per trainer
-// One thread per user for default plan
+// One thread per user per trainer — stores BOTH text and call messages
 // ─────────────────────────────────────────────────────────────
 
 export interface IChat extends Document {
@@ -40,13 +47,14 @@ export interface IChat extends Document {
   trainerId?: Types.ObjectId;
   chatType: TChatType;
 
-  // Snapshotted trainer persona — null for default plan
   trainerPersona?: {
     name: string;
     specialty: string;
     systemPrompt: string;
   };
 
+  // All messages — text + anam_call — stored together
+  // Filter by source to get only call or only text messages
   messages: IMessage[];
   totalMessages: number;
   lastMessageAt?: Date;

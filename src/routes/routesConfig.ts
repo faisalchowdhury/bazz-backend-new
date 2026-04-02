@@ -22,6 +22,7 @@ import {
   ExerciseBlockRoutes,
   ExerciseBlockStandaloneRoutes,
 } from "../modules/exerciseBlock/exerciseBlock.route";
+import { AnamRoutes } from "../modules/anam/anam.routes";
 
 // import { PaymentRoute } from "../modules/unused_payments/payment.route";
 
@@ -37,6 +38,7 @@ export const routesConfig = [
   { path: "block", handler: ExerciseBlockStandaloneRoutes },
   { path: "exercise-steps", handler: ExerciseStepRoutes },
   { path: "chat", handler: ChatRoutes },
+  { path: "anam", handler: AnamRoutes },
 
   { path: "terms", handler: TermsRoutes },
   { path: "about", handler: AboutRoutes },

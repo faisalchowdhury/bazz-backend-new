@@ -32,6 +32,13 @@ const trainerSchema = new Schema<ITrainer>(
     // AI Layer
     systemPrompt: { type: String },
 
+    // ── Anam AI Integration (new) ─────────────────────────────
+    // Trainer sets their personaId from Anam dashboard via app form
+    anamAI: {
+      personaId: { type: String }, // Anam persona ID
+      isEnabled: { type: Boolean, default: false },
+    },
+
     // Monetization
     subscriptionPrice: {
       free: { type: Boolean, default: true },
@@ -48,4 +55,7 @@ const trainerSchema = new Schema<ITrainer>(
 
 trainerSchema.index({ specialty: 1, isActive: 1, isVerified: 1 });
 
-export const TrainerModel = mongoose.model<ITrainer>("Trainer", trainerSchema);
+// Guard prevents OverwriteModelError
+export const TrainerModel =
+  (mongoose.models.Trainer as mongoose.Model<ITrainer>) ||
+  mongoose.model<ITrainer>("Trainer", trainerSchema);
