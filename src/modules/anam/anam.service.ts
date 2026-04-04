@@ -13,6 +13,60 @@ const ANAM_API_KEY = process.env.ANAM_API_KEY || "";
 // How many previous messages to inject (same as chat)
 const CALL_HISTORY_WINDOW = 10;
 
+// Platform default monthly limit
+const DEFAULT_MONTHLY_LIMIT = 250;
+
+// ─────────────────────────────────────────────────────────────
+// HELPER — CHECK AND RESET MONTHLY PERIOD
+// If 30 days have passed since currentPeriodStart → reset usage
+// ─────────────────────────────────────────────────────────────
+
+const checkAndResetMonthlyPeriod = (user: any): void => {
+  const now = new Date();
+
+  // Initialize anamAI if user doesn't have it yet
+  if (!user.anamAI) {
+    user.anamAI = {
+      monthlyMinutesLimit: DEFAULT_MONTHLY_LIMIT,
+      minutesUsedThisMonth: 0,
+      currentPeriodStart: now,
+      totalMinutesAllTime: 0,
+    };
+    return;
+  }
+
+  const periodStart = new Date(user.anamAI.currentPeriodStart);
+  const daysSincePeriodStart =
+    (now.getTime() - periodStart.getTime()) / (1000 * 60 * 60 * 24);
+
+  // Reset if 30 days have passed
+  if (daysSincePeriodStart >= 30) {
+    user.anamAI.minutesUsedThisMonth = 0;
+    user.anamAI.currentPeriodStart = now;
+  }
+};
+
+// ─────────────────────────────────────────────────────────────
+// HELPER — GET USAGE SUMMARY
+// ─────────────────────────────────────────────────────────────
+
+const getUsageSummary = (user: any) => {
+  const anam = user.anamAI;
+  const limit = anam?.monthlyMinutesLimit || DEFAULT_MONTHLY_LIMIT;
+  const used = anam?.minutesUsedThisMonth || 0;
+  const remaining = Math.max(0, limit - used);
+
+  const periodStart = anam?.currentPeriodStart
+    ? new Date(anam.currentPeriodStart)
+    : new Date();
+
+  // Reset date = periodStart + 30 days
+  const resetDate = new Date(periodStart);
+  resetDate.setDate(resetDate.getDate() + 30);
+
+  return { limit, used, remaining, resetDate };
+};
+
 // ─────────────────────────────────────────────────────────────
 // TRAINER — SET ANAM PERSONA ID
 // Called when trainer fills in their personaId via app form
@@ -48,15 +102,63 @@ export const removeTrainerPersona = async (trainerId: string) => {
 };
 
 // ─────────────────────────────────────────────────────────────
+// GET ANAM USAGE
+// Returns user's current usage, limit, remaining and reset date
+// ─────────────────────────────────────────────────────────────
+
+export const getAnamUsage = async (userId: string) => {
+  const user = await UserModel.findById(userId);
+  if (!user) throw new Error("User not found");
+
+  checkAndResetMonthlyPeriod(user);
+  await user.save();
+
+  const { limit, used, remaining, resetDate } = getUsageSummary(user);
+
+  return {
+    monthlyMinutesLimit: limit,
+    minutesUsedThisMonth: used,
+    minutesRemaining: remaining,
+    periodResetDate: resetDate,
+    totalMinutesAllTime: user.anamAI?.totalMinutesAllTime || 0,
+    isLimitReached: remaining <= 0,
+  };
+};
+
+// ─────────────────────────────────────────────────────────────
 // START ANAM SESSION
-// 1. Verify trainer has Anam enabled
-// 2. Create Anam session via API (get session token)
-// 3. Save AnamSession to DB
-// Returns: { sessionToken, anamSessionId, dbSessionId }
+// 1. Check monthly minute limit — block if exceeded
+// 2. Verify trainer has Anam enabled
+// 3. Create Anam session via API (get session token)
+// 4. Save AnamSession to DB
+// Returns: { sessionToken, anamSessionId, dbSessionId, usage }
 // ─────────────────────────────────────────────────────────────
 
 export const startAnamSession = async (userId: string, trainerId: string) => {
-  // 1. Load trainer and verify Anam is set up
+  // 1. Load user and check/reset monthly period
+  const user = await UserModel.findById(userId);
+  if (!user) throw new Error("User not found");
+
+  checkAndResetMonthlyPeriod(user);
+
+  // 2. Check if monthly limit is reached
+  const { limit, used, remaining, resetDate } = getUsageSummary(user);
+
+  if (remaining <= 0) {
+    throw new Error(
+      `You have reached your ${limit} minute monthly limit. ` +
+        `Your limit resets on ${resetDate.toLocaleDateString("en-US", {
+          month: "long",
+          day: "numeric",
+          year: "numeric",
+        })}.`,
+    );
+  }
+
+  // 3. Save updated period (in case it was reset)
+  await user.save();
+
+  // 4. Load trainer and verify Anam is set up
   const trainer = await TrainerModel.findById(trainerId);
   console.log(trainer);
   if (!trainer) throw new Error("Trainer not found");
@@ -64,7 +166,7 @@ export const startAnamSession = async (userId: string, trainerId: string) => {
     throw new Error("This trainer has not set up their Anam AI video call yet");
   }
 
-  // 2. Check no active session already exists for this user+trainer
+  // 5. Check no active session already exists for this user+trainer
   const existingActive = await AnamSessionModel.findOne({
     userId,
     trainerId,
@@ -74,7 +176,7 @@ export const startAnamSession = async (userId: string, trainerId: string) => {
     throw new Error("You already have an active call session. End it first.");
   }
 
-  // 3. Call Anam API to create a session
+  // 6. Call Anam API to create a session
   let anamSessionId: string | undefined;
   let sessionToken: string | undefined;
 
@@ -103,7 +205,7 @@ export const startAnamSession = async (userId: string, trainerId: string) => {
     console.warn("Anam API call failed (dev mode?):", err.message);
   }
 
-  // 4. Save session to DB
+  // 7. Save session to DB
   const dbSession = await AnamSessionModel.create({
     userId,
     trainerId,
@@ -119,6 +221,13 @@ export const startAnamSession = async (userId: string, trainerId: string) => {
     sessionToken,
     personaId: trainer.anamAI.personaId,
     trainerName: trainer.name,
+    // Return current usage so frontend can show remaining minutes
+    usage: {
+      minutesRemaining: remaining,
+      minutesUsedThisMonth: used,
+      monthlyMinutesLimit: limit,
+      periodResetDate: resetDate,
+    },
   };
 };
 
@@ -256,9 +365,11 @@ export const sendAnamMessage = async (
 
 // ─────────────────────────────────────────────────────────────
 // END ANAM SESSION
+// Calculates duration → updates user's monthly minutes used
 // ─────────────────────────────────────────────────────────────
 
 export const endAnamSession = async (userId: string, dbSessionId: string) => {
+  // 1. Find active session
   const session = await AnamSessionModel.findOne({
     _id: dbSessionId,
     userId,
@@ -266,19 +377,62 @@ export const endAnamSession = async (userId: string, dbSessionId: string) => {
   });
   if (!session) throw new Error("No active session found");
 
+  // 2. Calculate duration
   const endedAt = new Date();
   const durationSeconds = Math.round(
     (endedAt.getTime() - session.startedAt.getTime()) / 1000,
   );
+  // Round up to nearest minute for billing fairness
+  const durationMinutes = Math.ceil(durationSeconds / 60);
 
+  // 3. Mark session complete
   session.status = "completed";
   session.endedAt = endedAt;
   session.durationSeconds = durationSeconds;
   await session.save();
 
+  // 4. Update user's monthly minutes usage
+  const user = await UserModel.findById(userId);
+  if (user) {
+    checkAndResetMonthlyPeriod(user);
+
+    // Initialize anamAI block if not set yet
+    if (!user.anamAI) {
+      user.anamAI = {
+        monthlyMinutesLimit: DEFAULT_MONTHLY_LIMIT,
+        minutesUsedThisMonth: 0,
+        currentPeriodStart: new Date(),
+        totalMinutesAllTime: 0,
+      };
+    }
+
+    // Add this call's duration to monthly + all-time totals
+    user.anamAI.minutesUsedThisMonth += durationMinutes;
+    user.anamAI.totalMinutesAllTime += durationMinutes;
+    await user.save();
+
+    const { limit, used, remaining, resetDate } = getUsageSummary(user);
+
+    return {
+      sessionId: (session._id as Types.ObjectId).toString(),
+      durationSeconds,
+      durationMinutes,
+      endedAt,
+      // Return updated usage so frontend can refresh the minutes display
+      usage: {
+        minutesUsedThisMonth: used,
+        monthlyMinutesLimit: limit,
+        minutesRemaining: remaining,
+        periodResetDate: resetDate,
+        totalMinutesAllTime: user.anamAI.totalMinutesAllTime,
+      },
+    };
+  }
+
   return {
     sessionId: (session._id as Types.ObjectId).toString(),
     durationSeconds,
+    durationMinutes,
     endedAt,
   };
 };
@@ -481,7 +635,6 @@ const extractContentQuery = (message: string) => {
 };
 
 // Build system prompt for Anam call — trainer persona voice
-// Same as chat but adds spoken response instructions
 const buildAnamSystemPrompt = (
   persona: { name: string; specialty: string; systemPrompt: string },
   userContext: string,
@@ -502,7 +655,7 @@ Example: "You should check out my video called 'Perfect Bench Press Form Guide' 
 Never break character. Never mention you are an AI.
 `.trim();
 
-// Build user context — same as chat but isAnamCall changes video section
+// Build user context — isAnamCall changes video section (title only vs title + URL)
 const buildUserContext = (
   user: any,
   memory: any,
@@ -546,8 +699,6 @@ ${recentWorkouts
 `.trim()
       : "RECENT WORKOUTS: None yet.";
 
-  // Anam call → title only, no URL
-  // Text chat → title + URL (handled in chat.service.ts)
   const contentSection =
     relevantContent.length > 0
       ? `

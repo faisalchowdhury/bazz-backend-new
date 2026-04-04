@@ -8,6 +8,7 @@ import {
   endAnamSession,
   getCallHistory,
   getSessionHistory,
+  getAnamUsage,
 } from "./anam.service";
 
 // ─────────────────────────────────────────────────────────────
@@ -93,6 +94,15 @@ export const startSession = async (
       data: result,
     });
   } catch (err: any) {
+    // Monthly limit reached — return 403 with clear message
+    if (err.message.includes("monthly limit")) {
+      res.status(403).json({
+        success: false,
+        message: err.message,
+        code: "MONTHLY_LIMIT_REACHED",
+      });
+      return;
+    }
     res.status(400).json({ success: false, message: err.message });
   }
 };
@@ -140,7 +150,7 @@ export const sendMessage = async (
 
 // ─────────────────────────────────────────────────────────────
 // PATCH /anam/session/:sessionId/end
-// User ends the call
+// User ends the call — saves duration + updates monthly usage
 // ─────────────────────────────────────────────────────────────
 
 export const endSession = async (
@@ -158,6 +168,23 @@ export const endSession = async (
     });
   } catch (err: any) {
     res.status(400).json({ success: false, message: err.message });
+  }
+};
+
+// ─────────────────────────────────────────────────────────────
+// GET /anam/usage
+// Returns user's monthly usage, limit, remaining and reset date
+// Frontend uses this to show the minutes counter on call screen
+// ─────────────────────────────────────────────────────────────
+
+export const getUsage = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = (req.user as JwtPayloadWithUser).id;
+    const result = await getAnamUsage(userId);
+
+    res.status(200).json({ success: true, data: result });
+  } catch (err: any) {
+    res.status(500).json({ success: false, message: err.message });
   }
 };
 

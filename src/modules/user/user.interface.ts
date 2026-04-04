@@ -13,6 +13,7 @@ export type TGoal =
   | "weight_loss"
   | "boxing";
 export type TSubscriptionTier = "free" | "paid" | "premium";
+export type TSubscriptionType = "default_plan" | "trainer_plan";
 export type TAdherence = "completed" | "skipped" | "modified";
 export type TMotivationStyle = "tough_love" | "gentle" | "balanced";
 export type TEquipment =
@@ -20,6 +21,19 @@ export type TEquipment =
   | "home_only"
   | "hotel_gym"
   | "no_equipment";
+
+// ─────────────────────────────────────────────────────────────
+// ANAM AI USAGE (new)
+// Tracks monthly video call minutes per user
+// Resets automatically every 30 days
+// ─────────────────────────────────────────────────────────────
+
+export interface IUserAnamAI {
+  monthlyMinutesLimit: number; // 250 — platform default
+  minutesUsedThisMonth: number; // increments after each call ends
+  currentPeriodStart: Date; // when current billing month started
+  totalMinutesAllTime: number; // all-time total for analytics
+}
 
 // ─────────────────────────────────────────────────────────────
 // SESSION SUMMARY (inside rolling memory)
@@ -30,7 +44,7 @@ export interface ISessionSummary {
   date: Date;
   workoutSummary: string;
   exercisesCompleted: string[];
-  loadsUsed: Record<string, string>; // { "Bench Press": "135lb x 3x8" }
+  loadsUsed: Record<string, string>;
   adherence: TAdherence;
   rpe?: number;
   painNotes?: string;
@@ -58,7 +72,7 @@ export interface IProfileMemory {
 
 export interface IRollingMemory {
   last3Sessions: ISessionSummary[];
-  lastKnownLoads: Record<string, string>; // { "Squat": "185lb" }
+  lastKnownLoads: Record<string, string>;
   adherenceNotes?: string;
   recoveryNotes?: string;
   flags: string[];
@@ -105,7 +119,7 @@ export interface IWorkoutHistory {
 // ─────────────────────────────────────────────────────────────
 
 export interface IUser extends Document {
-  // ── Existing ──────────────────────────────────────────────
+  // ── Auth & Profile ────────────────────────────────────────
   firstName: string;
   lastName: string;
   email: string;
@@ -118,42 +132,47 @@ export interface IUser extends Document {
   isVerified: boolean;
   isDeleted: boolean;
 
-  // ── New: Fitness Profile ──────────────────────────────────
-  height?: number; // cm
-  weight?: number; // kg
+  // ── Fitness Profile ───────────────────────────────────────
+  height?: number;
+  weight?: number;
   fitnessLevel?: TFitnessLevel;
   injuries: string[];
   availableEquipment?: TEquipment;
   trainingDaysPerWeek?: number;
 
-  // ── New: Goal ─────────────────────────────────────────────
+  // ── Goal ─────────────────────────────────────────────────
   primaryGoal?: TGoal;
 
-  // ── New: Trainer Subscription ─────────────────────────────
+  // ── Subscription ─────────────────────────────────────────
   subscribedTrainer?: Types.ObjectId;
+  subscriptionType?: TSubscriptionType;
   subscriptionTier: TSubscriptionTier;
   subscriptionStartDate?: Date;
   subscriptionEndDate?: Date;
 
-  // ── New: AI Memory ────────────────────────────────────────
+  // ── Anam AI Usage (new) ───────────────────────────────────
+  // Tracks monthly video call minutes — resets every 30 days
+  anamAI?: IUserAnamAI;
+
+  // ── AI Memory ────────────────────────────────────────────
   memory: IUserMemory[];
 
-  // ── New: Workout History ──────────────────────────────────
+  // ── Workout History ───────────────────────────────────────
   workoutHistory: IWorkoutHistory[];
 
-  // ── New: Onboarding ───────────────────────────────────────
+  // ── Onboarding ────────────────────────────────────────────
   onboardingCompleted: boolean;
 
-  // ── Instance method ───────────────────────────────────────
+  // ── Instance Methods ──────────────────────────────────────
   getMemoryForTrainer(trainerId: string): IUserMemory | undefined;
 
-  // ── Timestamps (auto by mongoose) ─────────────────────────
+  // ── Timestamps ────────────────────────────────────────────
   createdAt: Date;
   updatedAt: Date;
 }
 
 // ─────────────────────────────────────────────────────────────
-// OTP (unchanged)
+// OTP
 // ─────────────────────────────────────────────────────────────
 
 export interface IOTP {

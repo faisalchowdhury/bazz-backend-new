@@ -117,6 +117,7 @@ export const generateAIPlan = async (
   }
 
   // 6. Load exercises + steps for each block from separate collections
+
   const blocksWithExercises = await Promise.all(
     approvedBlocks.map(async (block) => {
       const exercises = await ExerciseModel.find({

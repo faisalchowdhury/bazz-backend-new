@@ -16,7 +16,7 @@ const sessionSummarySchema = new Schema<ISessionSummary>(
     date: { type: Date, default: Date.now },
     workoutSummary: { type: String },
     exercisesCompleted: [{ type: String }],
-    loadsUsed: { type: Schema.Types.Mixed, default: {} }, // e.g. { "Bench Press": "135lb x 3x8" }
+    loadsUsed: { type: Schema.Types.Mixed, default: {} },
     adherence: {
       type: String,
       enum: ["completed", "skipped", "modified"],
@@ -27,7 +27,7 @@ const sessionSummarySchema = new Schema<ISessionSummary>(
     sleepStressRating: { type: Number, min: 1, max: 10 },
     energyLevel: { type: Number, min: 1, max: 10 },
     nextSessionPrescribed: { type: String },
-    flags: [{ type: String }], // e.g. ["pain_flag", "low_adherence"]
+    flags: [{ type: String }],
   },
   { _id: true },
 );
@@ -39,8 +39,6 @@ const userMemorySchema = new Schema<IUserMemory>(
       ref: "Trainer",
       required: true,
     },
-
-    // Stable — updated occasionally
     profileMemory: {
       preferredName: { type: String },
       goal: {
@@ -52,9 +50,9 @@ const userMemorySchema = new Schema<IUserMemory>(
         enum: ["beginner", "intermediate", "advanced"],
       },
       scheduleDaysPerWeek: { type: Number },
-      equipment: { type: String }, // e.g. "full gym", "home only"
-      limitations: { type: String }, // self-reported injuries
-      preferences: { type: String }, // e.g. "morning workouts, no leg press"
+      equipment: { type: String },
+      limitations: { type: String },
+      preferences: { type: String },
       motivationStyle: {
         type: String,
         enum: ["tough_love", "gentle", "balanced"],
@@ -62,17 +60,14 @@ const userMemorySchema = new Schema<IUserMemory>(
       },
       updatedAt: { type: Date, default: Date.now },
     },
-
-    // Rolling — updated after every session (keep last 3)
     rollingMemory: {
       last3Sessions: [sessionSummarySchema],
-      lastKnownLoads: { type: Schema.Types.Mixed, default: {} }, // { "Squat": "185lb" }
+      lastKnownLoads: { type: Schema.Types.Mixed, default: {} },
       adherenceNotes: { type: String },
       recoveryNotes: { type: String },
       flags: [{ type: String }],
       updatedAt: { type: Date, default: Date.now },
     },
-
     lastUpdatedAt: { type: Date, default: Date.now },
   },
   { _id: true },
@@ -82,7 +77,7 @@ const workoutHistorySchema = new Schema<IWorkoutHistory>(
   {
     trainerId: { type: Schema.Types.ObjectId, ref: "Trainer" },
     date: { type: Date, default: Date.now },
-    focus: { type: String }, // e.g. "Upper Body", "Legs"
+    focus: { type: String },
     exercisesPerformed: [
       {
         exerciseId: { type: Schema.Types.ObjectId },
@@ -130,26 +125,26 @@ const userSchema = new Schema<IUser>(
     isVerified: { type: Boolean, required: true, default: false },
     isDeleted: { type: Boolean, required: true, default: false },
 
-    // ── NEW: Fitness Profile ──────────────────────────────────
-    height: { type: Number, required: false }, // cm
-    weight: { type: Number, required: false }, // kg
+    // ── Fitness Profile ──────────────────────────────────────
+    height: { type: Number, required: false },
+    weight: { type: Number, required: false },
     fitnessLevel: {
       type: String,
       enum: ["beginner", "intermediate", "advanced"],
       required: false,
     },
-    injuries: [{ type: String }], // self-reported, e.g. ["bad knees", "lower back"]
-    availableEquipment: { type: String }, // "full_gym" | "home_only" | "hotel_gym" | "no_equipment"
+    injuries: [{ type: String }],
+    availableEquipment: { type: String },
     trainingDaysPerWeek: { type: Number, min: 1, max: 7 },
 
-    // ── NEW: Goal ─────────────────────────────────────────────
+    // ── Goal ─────────────────────────────────────────────────
     primaryGoal: {
       type: String,
       enum: ["maintain_physique", "muscle_gain", "weight_loss", "boxing"],
       required: false,
     },
 
-    // ── NEW: Trainer Subscription ─────────────────────────────
+    // ── Trainer Subscription ──────────────────────────────────
     subscribedTrainer: {
       type: Schema.Types.ObjectId,
       ref: "Trainer",
@@ -163,13 +158,35 @@ const userSchema = new Schema<IUser>(
     subscriptionStartDate: { type: Date, required: false },
     subscriptionEndDate: { type: Date, required: false },
 
-    // ── NEW: AI Memory (one entry per trainer subscribed to) ──
+    // ── Anam AI Usage (new) ───────────────────────────────────
+    // Tracks monthly video call minutes per user
+    // Auto-initialized on first call, resets every 30 days
+    anamAI: {
+      monthlyMinutesLimit: {
+        type: Number,
+        default: 250, // platform default: 250 min/month
+      },
+      minutesUsedThisMonth: {
+        type: Number,
+        default: 0,
+      },
+      currentPeriodStart: {
+        type: Date,
+        default: Date.now, // set when user makes first call
+      },
+      totalMinutesAllTime: {
+        type: Number,
+        default: 0,
+      },
+    },
+
+    // ── AI Memory ────────────────────────────────────────────
     memory: [userMemorySchema],
 
-    // ── NEW: Workout History ──────────────────────────────────
+    // ── Workout History ──────────────────────────────────────
     workoutHistory: [workoutHistorySchema],
 
-    // ── NEW: Onboarding ───────────────────────────────────────
+    // ── Onboarding ───────────────────────────────────────────
     onboardingCompleted: { type: Boolean, default: false },
   },
   { timestamps: true },
@@ -179,7 +196,6 @@ const userSchema = new Schema<IUser>(
 // INSTANCE METHODS
 // ─────────────────────────────────────────────────────────────
 
-// Get memory object for a specific trainer
 userSchema.methods.getMemoryForTrainer = function (trainerId: string) {
   return this.memory.find(
     (m: IUserMemory) => m.trainerId.toString() === trainerId.toString(),
