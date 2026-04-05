@@ -1,39 +1,52 @@
 import mongoose, { Schema } from "mongoose";
 import { IInvoice } from "./invoice.interface";
 
-const ivoiceSchema = new Schema<IInvoice>({
-  userUserId: {
-    type: mongoose.Schema.Types.ObjectId,
-    required: true,
+const invoiceSchema = new Schema<IInvoice>(
+  {
+    userId: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+      index: true,
+    },
+    trainerId: {
+      type: Schema.Types.ObjectId,
+      ref: "Trainer",
+      required: true,
+      index: true,
+    },
+    requestId: {
+      type: Schema.Types.ObjectId,
+      ref: "TrainerRequest",
+      required: true,
+    },
+
+    amount: { type: Number, required: true }, // in cents
+    currency: { type: String, default: "usd" },
+    description: { type: String, required: true },
+
+    periodStart: { type: Date, required: true },
+    periodEnd: { type: Date, required: true },
+
+    status: {
+      type: String,
+      enum: ["draft", "sent", "paid", "expired"],
+      default: "draft",
+    },
+
+    pdfUrl: { type: String },
+
+    isRenewal: { type: Boolean, default: false },
+    previousInvoiceId: { type: Schema.Types.ObjectId, ref: "Invoice" },
+
+    sentAt: { type: Date },
+    paidAt: { type: Date },
+    expiresAt: { type: Date },
   },
-  trainerUserId: {
-    type: mongoose.Schema.Types.ObjectId,
-    required: true,
-  },
-  actualPrice: {
-    type: Number,
-    required: true,
-  },
-  adjustedPrice: {
-    type: Number,
-    required: true,
-  },
-  issuedDate: {
-    type: String,
-    required: true,
-  },
-  status: {
-    type: String,
-    required: true,
-    enum: ["pending", "paid"],
-    default: "pending",
-  },
-  invoicePath: {
-    type: String,
-    required: true,
-  },
-  isSent: {
-    type: Boolean,
-    required: true,
-  },
-});
+  { timestamps: true },
+);
+
+invoiceSchema.index({ userId: 1, status: 1 });
+invoiceSchema.index({ trainerId: 1, status: 1 });
+
+export const InvoiceModel = mongoose.model<IInvoice>("Invoice", invoiceSchema);

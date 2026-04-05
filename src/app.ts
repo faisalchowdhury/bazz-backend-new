@@ -7,6 +7,7 @@ import notFound from "./middlewares/notFound";
 import router from "./routes";
 import { logger, logHttpRequests } from "./logger/logger";
 import { template } from "./rootTemplate";
+import { startCronJobs } from "./utils/corn";
 
 // Create an Express application
 const app: Application = express();
@@ -50,5 +51,5 @@ app.use((err: any, req: Request, res: Response, next: NextFunction) => {
   logger.error(`Error occurred: ${err.message}`, { stack: err.stack });
   next(err);
 });
-
+startCronJobs();
 export default app;
