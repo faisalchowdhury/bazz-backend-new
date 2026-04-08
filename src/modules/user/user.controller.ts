@@ -1201,9 +1201,11 @@ export const completeOnboarding = async (
   try {
     const userId = (req.user as JwtPayloadWithUser).id;
     const result = await completeOnboardingService(userId, req.body);
+
     res.json({
       success: true,
-      message: `Welcome! You've been matched with ${result.assignedTrainer.name}`,
+      message:
+        "Onboarding complete! Browse trainers and send a request to get started.",
       data: result,
     });
   } catch (err: any) {

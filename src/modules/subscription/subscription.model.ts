@@ -44,7 +44,6 @@ const subscriptionSchema = new Schema<ISubscription>(
   },
   { timestamps: true },
 );
-
 subscriptionSchema.index({ userId: 1, status: 1 });
 subscriptionSchema.index({ endDate: 1, status: 1 }); // for cron job queries
 

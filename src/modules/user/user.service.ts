@@ -455,39 +455,8 @@ export const completeOnboarding = async (
     preferredName?: string;
     motivationStyle?: string;
     preferences?: string;
-    preferredTrainerId?: string;
   },
 ) => {
-  let assignedTrainer;
-
-  if (data.preferredTrainerId) {
-    assignedTrainer = await TrainerModel.findById(data.preferredTrainerId);
-  } else {
-    // Auto-assign: map goal → specialty
-    assignedTrainer = await TrainerModel.findOne({
-      specialty: data.primaryGoal,
-      isActive: true,
-      isVerified: true,
-    });
-  }
-
-  if (!assignedTrainer) {
-    throw new Error(`No available trainer found for goal: ${data.primaryGoal}`);
-  }
-
-  // Build initial profile memory for this trainer
-  const profileMemory = {
-    preferredName: data.preferredName,
-    goal: data.primaryGoal,
-    experienceLevel: data.fitnessLevel,
-    scheduleDaysPerWeek: data.trainingDaysPerWeek,
-    equipment: data.availableEquipment,
-    limitations: data.injuries?.join(", ") || "none",
-    preferences: data.preferences || "",
-    motivationStyle: data.motivationStyle || "balanced",
-    updatedAt: new Date(),
-  };
-
   const user = await UserModel.findByIdAndUpdate(
     userId,
     {
@@ -501,36 +470,20 @@ export const completeOnboarding = async (
         availableEquipment: data.availableEquipment,
         trainingDaysPerWeek: data.trainingDaysPerWeek,
         injuries: data.injuries || [],
-        subscribedTrainer: assignedTrainer._id,
-        subscriptionTier: "free",
-        subscriptionStartDate: new Date(),
         onboardingCompleted: true,
-      },
-      $push: {
-        memory: {
-          trainerId: assignedTrainer._id,
-          profileMemory,
-          rollingMemory: {
-            last3Sessions: [],
-            lastKnownLoads: {},
-            adherenceNotes: "",
-            recoveryNotes: "",
-            flags: [],
-            updatedAt: new Date(),
-          },
-          lastUpdatedAt: new Date(),
-        },
+        // ─────────────────────────────────────────────────────
+        // NOT setting subscribedTrainer here
+        // NOT setting subscriptionTier here
+        // NOT setting subscriptionStartDate here
+        // These are set in payment.service.ts → verifyPayment()
+        // after user pays for a trainer plan or default plan
+        // ─────────────────────────────────────────────────────
       },
     },
     { new: true },
-  )
-    .select("-password")
-    .populate(
-      "subscribedTrainer",
-      "name specialty certifications profileImage",
-    );
+  ).select("-password");
 
-  return { user, assignedTrainer };
+  return { user };
 };
 
 // ─────────────────────────────────────────────────────────────

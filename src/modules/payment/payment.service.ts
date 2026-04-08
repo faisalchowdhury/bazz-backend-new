@@ -3,6 +3,7 @@ import { Types } from "mongoose";
 import { PaymentModel } from "./payment.model";
 
 import { UserModel } from "../user/user.model";
+import { TrainerModel } from "../trainer/trainer.model";
 import { InvoiceModel } from "../invoice/invoice.model";
 import { SubscriptionModel } from "../subscription/subscription.model";
 
@@ -11,9 +12,57 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
 });
 
 // ─────────────────────────────────────────────────────────────
+// HELPER — INIT TRAINER MEMORY FOR USER
+// Called after payment is verified
+// Creates the memory entry for this trainer if not already exists
+// This is what was previously done in onboarding — now moved here
+// ─────────────────────────────────────────────────────────────
+
+const initTrainerMemory = async (userId: string, trainerId: string) => {
+  const user = await UserModel.findById(userId);
+  if (!user) return;
+
+  // Check if memory already exists for this trainer
+  const memoryExists = user.memory?.find(
+    (m: any) => m.trainerId.toString() === trainerId,
+  );
+  if (memoryExists) return; // already initialized — skip
+
+  // Build initial profile memory from user's profile
+  const profileMemory = {
+    goal: user.primaryGoal,
+    experienceLevel: user.fitnessLevel,
+    scheduleDaysPerWeek: user.trainingDaysPerWeek,
+    equipment: user.availableEquipment,
+    limitations: user.injuries?.join(", ") || "none",
+    preferences: "",
+    motivationStyle: "balanced",
+    updatedAt: new Date(),
+  };
+
+  await UserModel.findByIdAndUpdate(userId, {
+    $push: {
+      memory: {
+        trainerId,
+        profileMemory,
+        rollingMemory: {
+          last3Sessions: [],
+          lastKnownLoads: {},
+          adherenceNotes: "",
+          recoveryNotes: "",
+          flags: [],
+          updatedAt: new Date(),
+        },
+        lastUpdatedAt: new Date(),
+      },
+    },
+  });
+};
+
+// ─────────────────────────────────────────────────────────────
 // VERIFY PAYMENT
 // Flutter sends transactionId after payment
-// Backend verifies with Stripe → grants access
+// Backend verifies with Stripe → grants access + inits memory
 // ─────────────────────────────────────────────────────────────
 
 export const verifyPayment = async (
@@ -36,7 +85,7 @@ export const verifyPayment = async (
     throw new Error("This transaction has already been processed");
   }
 
-  // 3. Verify with Stripe
+  // 3. Verify with Stripe or other gateway
   let gatewayResponse: any = null;
   let verificationPassed = false;
 
@@ -44,7 +93,6 @@ export const verifyPayment = async (
     try {
       const paymentIntent = await stripe.paymentIntents.retrieve(transactionId);
 
-      // Check payment intent is for correct amount
       if (
         paymentIntent.status === "succeeded" &&
         paymentIntent.amount === invoice.amount
@@ -60,15 +108,14 @@ export const verifyPayment = async (
       throw new Error(`Stripe verification error: ${err.message}`);
     }
   } else {
-    // For other gateways (bkash, nagad etc.)
-    // Add their verification logic here when needed
-    // For now we trust the transactionId from Flutter
-    // TODO: Add bkash/nagad API verification
+    // bkash / nagad / other
+    // TODO: add their verification logic when needed
+    // For now trust the transactionId from Flutter
     verificationPassed = true;
   }
 
+  // 4. If verification failed — save failed record and throw
   if (!verificationPassed) {
-    // Save failed payment record
     await PaymentModel.create({
       userId,
       trainerId: invoice.trainerId,
@@ -84,7 +131,7 @@ export const verifyPayment = async (
     throw new Error("Payment verification failed");
   }
 
-  // 4. Create subscription
+  // 5. Create subscription (30 days from today)
   const startDate = new Date();
   const endDate = new Date();
   endDate.setDate(endDate.getDate() + 30);
@@ -93,7 +140,7 @@ export const verifyPayment = async (
     userId,
     trainerId: invoice.trainerId,
     invoiceId: invoice._id,
-    paymentId: new Types.ObjectId(), // placeholder, updated below
+    paymentId: new Types.ObjectId(), // placeholder updated below
     status: "active",
     startDate,
     endDate,
@@ -102,7 +149,7 @@ export const verifyPayment = async (
     reminderSent1Day: false,
   });
 
-  // 5. Save verified payment record
+  // 6. Save verified payment
   const payment = await PaymentModel.create({
     userId,
     trainerId: invoice.trainerId,
@@ -117,16 +164,18 @@ export const verifyPayment = async (
     gatewayResponse,
   });
 
-  // 6. Update subscription with real paymentId
+  // 7. Update subscription with real paymentId
   subscription.paymentId = payment._id as Types.ObjectId;
   await subscription.save();
 
-  // 7. Mark invoice as paid
+  // 8. Mark invoice as paid
   invoice.status = "paid";
   invoice.paidAt = new Date();
   await invoice.save();
 
-  // 8. Grant user access — update subscribedTrainer on user
+  // 9. Grant user access
+  // Sets subscribedTrainer + subscriptionTier on user model
+  // This is the ONLY place these fields are set — not in onboarding
   await UserModel.findByIdAndUpdate(userId, {
     $set: {
       subscribedTrainer: invoice.trainerId,
@@ -135,6 +184,16 @@ export const verifyPayment = async (
       subscriptionEndDate: endDate,
     },
   });
+
+  // 10. Initialize trainer memory for this user
+  // Moved here from onboarding — memory is created only after payment
+  // so it's tied to the actual trainer the user subscribed to
+  await initTrainerMemory(userId, invoice.trainerId.toString());
+
+  // 11. Load trainer name for response
+  const trainer = await TrainerModel.findById(invoice.trainerId)
+    .select("name specialty")
+    .lean();
 
   return {
     payment,
@@ -145,6 +204,7 @@ export const verifyPayment = async (
       startDate,
       endDate,
       trainerId: invoice.trainerId,
+      trainerName: (trainer as any)?.name,
     },
   };
 };

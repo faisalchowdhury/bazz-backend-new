@@ -45,6 +45,7 @@ router.patch(
   upload.single("profilePicture"),
   updateUser,
 );
+
 router.get("/my-profile", guardRole(["admin", "user"]), getSelfInfo);
 router.delete("/account-delete", guardRole(["admin", "user"]), deleteUser);
 router.post("/change-password", guardRole(["admin", "user"]), changePassword);
