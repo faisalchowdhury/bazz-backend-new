@@ -9,7 +9,7 @@ export const twilioAuthToken = process.env.TWILIO_AUTH_TOKEN;
 export const twilioPhoneNumber = process.env.TWILIO_PHONE_NUMBER;
 
 // export const PORT = 8085; //------> production;
-export const PORT = 4000; //------> development;
+export const PORT = 4001; //------> development;
 export const DATABASE_URL = process.env.DATABASE_URL;
 export const JWT_SECRET_KEY = process.env.JWT_SECRET_KEY;
 export const Nodemailer_GMAIL = process.env.Nodemailer_GMAIL;
@@ -22,6 +22,9 @@ export const STRIPE_BASE_URL = "https://grassrootz-asifur-rahman.sarv.live/";
 export const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY || "";
 export const STRIPE_PUBLISH_KEY = process.env.STRIPE_PUBLISH_KEY;
 export const NODE_ENV = process.env.NODE_ENV;
+// Fallback default app trainer for promo / website subscribers
+// (preferred: mark a Trainer with isDefault=true via POST /promo/default-trainer)
+export const DEFAULT_TRAINER_ID = process.env.DEFAULT_TRAINER_ID;
 export const REDIS_HOST = "localhost";
 export const REDIS_PORT = 8002;
 export const REDIS_PASSWORD = process.env.REDIS_PASSWORD;

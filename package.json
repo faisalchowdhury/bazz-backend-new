@@ -6,6 +6,7 @@
   "scripts": {
     "prod": "node ./dist/server.js",
     "dev": "nodemon src/server.ts",
+    "import:promo": "ts-node-dev --transpile-only --exit-child src/scripts/importPromoCodes.ts",
     "build": "tsc",
     "lint": "eslint src --ignore-path .eslintignore --ext .ts",
     "lint:fix": "npx eslint src --fix",

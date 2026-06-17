@@ -15,15 +15,29 @@ const subscriptionSchema = new Schema<ISubscription>(
       required: true,
       index: true,
     },
+    // Optional — promo / default-trainer subscriptions have no invoice/payment
     invoiceId: {
       type: Schema.Types.ObjectId,
       ref: "Invoice",
-      required: true,
+      required: false,
     },
     paymentId: {
       type: Schema.Types.ObjectId,
       ref: "Payment",
-      required: true,
+      required: false,
+    },
+
+    // How this subscription was created
+    source: {
+      type: String,
+      enum: ["trainer_invoice", "promo"],
+      default: "trainer_invoice",
+      index: true,
+    },
+    promoCodeId: {
+      type: Schema.Types.ObjectId,
+      ref: "PromoCode",
+      required: false,
     },
 
     status: {

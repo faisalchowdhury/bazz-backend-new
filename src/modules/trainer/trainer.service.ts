@@ -4,6 +4,40 @@ import { getBlocksByTrainer } from "../exerciseBlock/exerciseBlock.service";
 import { getKnowledgePackService } from "../trainerKnowledge/trainerKnowledge.service";
 
 // ─────────────────────────────────────────────────────────────
+// BUILD SYSTEM PROMPT (generated — never taken from request body)
+// Derived from the trainer's own profile fields so the AI persona
+// always stays in sync with the info the trainer filled in.
+// ─────────────────────────────────────────────────────────────
+
+const buildSystemPrompt = (data: Partial<ITrainer>): string => {
+  const name = data.name?.trim() || "the trainer";
+
+  const certs = (data.certifications || []).filter(Boolean);
+  const certLine = certs.length ? `${certs.join(", ")}. ` : "";
+
+  const specialtyHuman = (data.specialty || "").replace(/_/g, " ").toUpperCase();
+  const specialtyLine = specialtyHuman
+    ? `Your specialty is ${specialtyHuman}. `
+    : "";
+
+  const tags = (data.trainingStyleTags || []).filter(Boolean);
+  const styleLine = tags.length
+    ? `Your coaching style emphasizes: ${tags.join(", ")}. `
+    : "";
+
+  const bioLine = data.bio?.trim() ? `${data.bio.trim()} ` : "";
+
+  return (
+    `You are ${name}: ${certLine}` +
+    specialtyLine +
+    bioLine +
+    styleLine +
+    `Help users with safe, practical, and structured guidance aligned to your specialty. ` +
+    `Never recommend unsafe, extreme, or harmful protocols. Output ONLY valid JSON.`
+  );
+};
+
+// ─────────────────────────────────────────────────────────────
 // GET ALL TRAINERS (browse / discovery)
 // ─────────────────────────────────────────────────────────────
 
@@ -78,7 +112,14 @@ export const createTrainerService = async (
   const existing = await TrainerModel.findOne({ userId });
   if (existing) throw new Error("Trainer profile already exists for this user");
 
-  const trainer = new TrainerModel({ userId, ...data });
+  // systemPrompt is generated from the profile, never accepted from the body.
+  const { systemPrompt: _ignored, ...rest } = data;
+
+  const trainer = new TrainerModel({
+    userId,
+    ...rest,
+    systemPrompt: buildSystemPrompt(rest),
+  });
   return await trainer.save();
 };
 
@@ -90,13 +131,36 @@ export const updateTrainerService = async (
   trainerId: string,
   updates: Partial<ITrainer>,
 ) => {
-  // Protect fields that should never be updated here
+  // Protect fields that should never be set directly here
   delete (updates as any).userId;
   delete (updates as any).subscriberCount;
+  delete (updates as any).systemPrompt; // generated, not client-supplied
+
+  const existing = await TrainerModel.findById(trainerId);
+  if (!existing) throw new Error("Trainer not found");
+
+  // Regenerate systemPrompt if any of the fields it's derived from changed.
+  const SOURCE_FIELDS: (keyof ITrainer)[] = [
+    "name",
+    "bio",
+    "certifications",
+    "specialty",
+    "trainingStyleTags",
+  ];
+  const finalUpdates: Partial<ITrainer> = { ...updates };
+  if (SOURCE_FIELDS.some((f) => f in updates)) {
+    finalUpdates.systemPrompt = buildSystemPrompt({
+      name: updates.name ?? existing.name,
+      bio: updates.bio ?? existing.bio,
+      certifications: updates.certifications ?? existing.certifications,
+      specialty: updates.specialty ?? existing.specialty,
+      trainingStyleTags: updates.trainingStyleTags ?? existing.trainingStyleTags,
+    });
+  }
 
   return await TrainerModel.findByIdAndUpdate(
     trainerId,
-    { $set: updates },
+    { $set: finalUpdates },
     { new: true },
   );
 };

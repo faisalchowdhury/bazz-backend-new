@@ -1,22 +1,34 @@
 import mongoose, { Schema } from "mongoose";
 import { IUpdate } from "./update.interface";
 
-const updateSchema = new Schema<IUpdate>({
-  trainerUserId: {
-    type: mongoose.Schema.Types.ObjectId,
-    required: true,
-  },
-  location: {
-    type: String,
-    required: true,
-  },
-  description: {
-    type: String,
-    required: true,
-  },
-  upload: {
-    type: String,
-  },
-});
+const updateSchema = new Schema<IUpdate>(
+  {
+    trainerUserId: {
+      type: Schema.Types.ObjectId,
 
-export const UpdateModel = mongoose.model<IUpdate>("Update", updateSchema);
+      required: true,
+    },
+    userId: {
+      type: Schema.Types.ObjectId,
+
+      required: true,
+    },
+    title: {
+      type: String,
+      required: true,
+    },
+    description: {
+      type: String,
+      required: true,
+    },
+    isRead: {
+      type: Boolean,
+      default: false,
+    },
+  },
+  { timestamps: true },
+);
+
+export const UpdateModel =
+  (mongoose.models.Update as mongoose.Model<IUpdate>) ||
+  mongoose.model<IUpdate>("Update", updateSchema);

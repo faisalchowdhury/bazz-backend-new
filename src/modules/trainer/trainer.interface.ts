@@ -45,6 +45,9 @@ export interface ITrainer extends Document {
   isActive: boolean;
   isVerified: boolean;
 
+  // Default app trainer for promo-code / website subscribers
+  isDefault?: boolean;
+
   createdAt: Date;
   updatedAt: Date;
 }

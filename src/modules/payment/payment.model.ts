@@ -25,7 +25,7 @@ const paymentSchema = new Schema<IPayment>(
     },
 
     transactionId: { type: String, required: true },
-    amount: { type: Number, required: true },
+    amount: { type: Number, required: true }, // full amount in cents
     currency: { type: String, default: "usd" },
     gateway: {
       type: String,
@@ -39,6 +39,12 @@ const paymentSchema = new Schema<IPayment>(
       default: "pending",
     },
 
+    // ── Commission split snapshot ─────────────────────────────
+    // Saved at verification time — never changes after that
+    commissionPercent: { type: Number, default: 0 },
+    platformAmountCents: { type: Number, default: 0 },
+    trainerAmountCents: { type: Number, default: 0 },
+
     verifiedAt: { type: Date },
     gatewayResponse: { type: Schema.Types.Mixed },
   },
@@ -46,6 +52,7 @@ const paymentSchema = new Schema<IPayment>(
 );
 
 paymentSchema.index({ userId: 1, status: 1 });
+paymentSchema.index({ trainerId: 1, status: 1 }); // for trainer earnings queries
 paymentSchema.index({ transactionId: 1 }, { unique: true });
 
 export const PaymentModel = mongoose.model<IPayment>("Payment", paymentSchema);

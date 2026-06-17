@@ -49,6 +49,10 @@ const trainerSchema = new Schema<ITrainer>(
     subscriberCount: { type: Number, default: 0 },
     isActive: { type: Boolean, default: true },
     isVerified: { type: Boolean, default: false },
+
+    // The single "default app trainer" that promo-code / website
+    // subscribers are attached to (they have no personal trainer).
+    isDefault: { type: Boolean, default: false, index: true },
   },
   { timestamps: true },
 );

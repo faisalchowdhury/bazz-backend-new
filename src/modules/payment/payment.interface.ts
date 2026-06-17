@@ -10,16 +10,24 @@ export interface IPayment extends Document {
   subscriptionId: Types.ObjectId; // ref → Subscription
 
   // Flutter sends these after payment
-  transactionId: string; // Stripe Payment Intent ID or gateway tx ID
-  amount: number; // in cents
+  transactionId: string;
+  amount: number; // full invoice amount in cents
   currency: string;
   gateway: TPaymentGateway;
 
   status: TPaymentStatus;
 
+  // ── Commission split (stored at verification time) ────────
+  // Snapshot of what platform takes and what trainer earns
+  // Stored here so historical records are accurate even if
+  // commission rate changes later
+  commissionPercent: number; // platform % at time of payment e.g. 20
+  platformAmountCents: number; // what platform earned e.g. 580
+  trainerAmountCents: number; // what trainer earns  e.g. 2320
+
   // Set when backend verifies with Stripe
   verifiedAt?: Date;
-  gatewayResponse?: any; // raw Stripe response stored for audit
+  gatewayResponse?: any;
 
   createdAt: Date;
   updatedAt: Date;

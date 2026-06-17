@@ -13,6 +13,7 @@ import {
 } from "./user.service";
 import { completeOnboarding as completeOnboardingService } from "./user.service";
 import { OTPModel, UserModel } from "./user.model";
+import { TrainerModel } from "../trainer/trainer.model";
 
 import { emitNotification } from "../../utils/socket";
 import httpStatus from "http-status";
@@ -186,6 +187,14 @@ export const loginUser = catchAsync(async (req: Request, res: Response) => {
     email: user.email,
     role: user.role,
   });
+
+  // For trainers, flag whether they have already created their Trainer
+  // profile (POST /trainer). true = profile exists, false = not set yet.
+  const isProfile =
+    user.role === "trainer"
+      ? !!(await TrainerModel.exists({ userId: user._id }))
+      : false;
+
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
@@ -197,6 +206,7 @@ export const loginUser = catchAsync(async (req: Request, res: Response) => {
         email: user?.email,
         role: user?.role,
       },
+      isProfile,
       token,
     },
   });

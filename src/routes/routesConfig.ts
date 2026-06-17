@@ -27,6 +27,10 @@ import { TrainerRequestRoutes } from "../modules/trainerRequest/trainerRequest.r
 import { InvoiceRoutes } from "../modules/invoice/invoice.route";
 import { SubscriptionRoutes } from "../modules/subscription/subscription.route";
 import { PaymentRoutes } from "../modules/payment/payment.route";
+import { UpdateRoutes } from "../modules/update/update.route";
+import { CommissionRoutes } from "../modules/commission/commission.route";
+import { WithdrawalRoutes } from "../modules/withdrawal/withdrawal.route";
+import { PromoCodeRoutes } from "../modules/promoCode/promoCode.route";
 
 // import { PaymentRoute } from "../modules/unused_payments/payment.route";
 
@@ -47,6 +51,10 @@ export const routesConfig = [
   { path: "invoice", handler: InvoiceRoutes },
   { path: "subscription", handler: SubscriptionRoutes },
   { path: "payment", handler: PaymentRoutes },
+  { path: "update", handler: UpdateRoutes },
+  { path: "commission", handler: CommissionRoutes },
+  { path: "withdrawal", handler: WithdrawalRoutes },
+  { path: "promo", handler: PromoCodeRoutes },
 
   { path: "terms", handler: TermsRoutes },
   { path: "about", handler: AboutRoutes },

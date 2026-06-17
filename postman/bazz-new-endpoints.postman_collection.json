@@ -1,0 +1,450 @@
+{
+  "info": {
+    "name": "Bazz — New Endpoints",
+    "description": "Postman collection for the newly added / recently reworked modules: Commission, Promo Code, Withdrawal, Update, Subscription, Payment, Invoice.\n\nSet the collection variables:\n- baseUrl  (e.g. http://localhost:5000)\n- userToken / trainerToken / adminToken  (JWT bearer tokens for each role)\n\nAll routes are mounted under /api/v1.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:5000" },
+    { "key": "userToken", "value": "" },
+    { "key": "trainerToken", "value": "" },
+    { "key": "adminToken", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Commission",
+      "item": [
+        {
+          "name": "Get commission rate (public)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/v1/commission", "host": ["{{baseUrl}}"], "path": ["api", "v1", "commission"] }
+          }
+        },
+        {
+          "name": "Set commission rate (admin)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"platformCommissionPercent\": 20\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/commission", "host": ["{{baseUrl}}"], "path": ["api", "v1", "commission"] }
+          }
+        },
+        {
+          "name": "Preview split (admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"amountCents\": 5000\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/commission/calculate", "host": ["{{baseUrl}}"], "path": ["api", "v1", "commission", "calculate"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Promo Code",
+      "item": [
+        {
+          "name": "Validate promo (user)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{userToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"code\": \"PROMO123\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/promo/validate", "host": ["{{baseUrl}}"], "path": ["api", "v1", "promo", "validate"] }
+          }
+        },
+        {
+          "name": "Redeem promo (user)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{userToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"code\": \"PROMO123\",\n  \"revenueCatTransactionId\": \"rc_txn_abc\",\n  \"revenueCatProductId\": \"rc_prod_xyz\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/promo/redeem", "host": ["{{baseUrl}}"], "path": ["api", "v1", "promo", "redeem"] }
+          }
+        },
+        {
+          "name": "Import codes (admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"type\": \"affiliate\",\n  \"codes\": [\"CODE1\", \"CODE2\", \"CODE3\"],\n  \"priceCents\": 999,\n  \"durationDays\": 30,\n  \"label\": \"1 Month Plan\",\n  \"revenueCatProductId\": \"rc_prod_xyz\",\n  \"maxUses\": 1,\n  \"batchId\": \"batch_2026_06\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/promo/import", "host": ["{{baseUrl}}"], "path": ["api", "v1", "promo", "import"] }
+          }
+        },
+        {
+          "name": "List codes (admin)",
+          "request": {
+            "method": "GET",
+            "header": [ { "key": "Authorization", "value": "Bearer {{adminToken}}" } ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/promo?type=affiliate&status=active&batchId=batch_2026_06&page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "promo"],
+              "query": [
+                { "key": "type", "value": "affiliate" },
+                { "key": "status", "value": "active" },
+                { "key": "batchId", "value": "batch_2026_06" },
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Promo stats (admin)",
+          "request": {
+            "method": "GET",
+            "header": [ { "key": "Authorization", "value": "Bearer {{adminToken}}" } ],
+            "url": { "raw": "{{baseUrl}}/api/v1/promo/stats", "host": ["{{baseUrl}}"], "path": ["api", "v1", "promo", "stats"] }
+          }
+        },
+        {
+          "name": "Disable / re-enable code (admin)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"disabled\": true\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/promo/:code/disable", "host": ["{{baseUrl}}"], "path": ["api", "v1", "promo", ":code", "disable"], "variable": [ { "key": "code", "value": "CODE1" } ] }
+          }
+        },
+        {
+          "name": "Set default trainer (admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"trainerId\": \"<trainerId>\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/promo/default-trainer", "host": ["{{baseUrl}}"], "path": ["api", "v1", "promo", "default-trainer"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Withdrawal",
+      "item": [
+        {
+          "name": "Earnings dashboard (trainer)",
+          "request": {
+            "method": "GET",
+            "header": [ { "key": "Authorization", "value": "Bearer {{trainerToken}}" } ],
+            "url": { "raw": "{{baseUrl}}/api/v1/withdrawal/earnings", "host": ["{{baseUrl}}"], "path": ["api", "v1", "withdrawal", "earnings"] }
+          }
+        },
+        {
+          "name": "Payment history (trainer)",
+          "request": {
+            "method": "GET",
+            "header": [ { "key": "Authorization", "value": "Bearer {{trainerToken}}" } ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/withdrawal/payments?limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "withdrawal", "payments"],
+              "query": [ { "key": "limit", "value": "20" } ]
+            }
+          }
+        },
+        {
+          "name": "My withdrawals (trainer)",
+          "request": {
+            "method": "GET",
+            "header": [ { "key": "Authorization", "value": "Bearer {{trainerToken}}" } ],
+            "url": { "raw": "{{baseUrl}}/api/v1/withdrawal/my", "host": ["{{baseUrl}}"], "path": ["api", "v1", "withdrawal", "my"] }
+          }
+        },
+        {
+          "name": "Request withdrawal (trainer)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{trainerToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"requestedAmountCents\": 10000,\n  \"withdrawalMethod\": \"paypal\",\n  \"paymentEmail\": \"trainer@example.com\",\n  \"additionalNote\": \"Monthly payout\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/withdrawal", "host": ["{{baseUrl}}"], "path": ["api", "v1", "withdrawal"] }
+          }
+        },
+        {
+          "name": "All withdrawals (admin)",
+          "request": {
+            "method": "GET",
+            "header": [ { "key": "Authorization", "value": "Bearer {{adminToken}}" } ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/withdrawal/admin/all?status=pending&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "withdrawal", "admin", "all"],
+              "query": [
+                { "key": "status", "value": "pending" },
+                { "key": "limit", "value": "20" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Approve withdrawal (admin)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"adminNote\": \"Approved\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/withdrawal/:id/approve", "host": ["{{baseUrl}}"], "path": ["api", "v1", "withdrawal", ":id", "approve"], "variable": [ { "key": "id", "value": "<withdrawalId>" } ] }
+          }
+        },
+        {
+          "name": "Mark paid (admin)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"adminNote\": \"Sent via PayPal\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/withdrawal/:id/paid", "host": ["{{baseUrl}}"], "path": ["api", "v1", "withdrawal", ":id", "paid"], "variable": [ { "key": "id", "value": "<withdrawalId>" } ] }
+          }
+        },
+        {
+          "name": "Reject withdrawal (admin)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"adminNote\": \"Insufficient balance\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/withdrawal/:id/reject", "host": ["{{baseUrl}}"], "path": ["api", "v1", "withdrawal", ":id", "reject"], "variable": [ { "key": "id", "value": "<withdrawalId>" } ] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Update",
+      "item": [
+        {
+          "name": "Today's updates (user)",
+          "request": {
+            "method": "GET",
+            "header": [ { "key": "Authorization", "value": "Bearer {{userToken}}" } ],
+            "url": { "raw": "{{baseUrl}}/api/v1/update/today", "host": ["{{baseUrl}}"], "path": ["api", "v1", "update", "today"] }
+          }
+        },
+        {
+          "name": "My updates (user)",
+          "request": {
+            "method": "GET",
+            "header": [ { "key": "Authorization", "value": "Bearer {{userToken}}" } ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/update/my?limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "update", "my"],
+              "query": [ { "key": "limit", "value": "20" } ]
+            }
+          }
+        },
+        {
+          "name": "Unread count (user)",
+          "request": {
+            "method": "GET",
+            "header": [ { "key": "Authorization", "value": "Bearer {{userToken}}" } ],
+            "url": { "raw": "{{baseUrl}}/api/v1/update/unread-count", "host": ["{{baseUrl}}"], "path": ["api", "v1", "update", "unread-count"] }
+          }
+        },
+        {
+          "name": "Mark all as read (user)",
+          "request": {
+            "method": "PATCH",
+            "header": [ { "key": "Authorization", "value": "Bearer {{userToken}}" } ],
+            "url": { "raw": "{{baseUrl}}/api/v1/update/read-all", "host": ["{{baseUrl}}"], "path": ["api", "v1", "update", "read-all"] }
+          }
+        },
+        {
+          "name": "Mark one as read (user)",
+          "request": {
+            "method": "PATCH",
+            "header": [ { "key": "Authorization", "value": "Bearer {{userToken}}" } ],
+            "url": { "raw": "{{baseUrl}}/api/v1/update/:id/read", "host": ["{{baseUrl}}"], "path": ["api", "v1", "update", ":id", "read"], "variable": [ { "key": "id", "value": "<updateId>" } ] }
+          }
+        },
+        {
+          "name": "Send update (trainer)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{trainerToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"userId\": \"<userId>\",\n  \"title\": \"Workout updated\",\n  \"description\": \"I added a new leg-day block to your plan.\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/update", "host": ["{{baseUrl}}"], "path": ["api", "v1", "update"] }
+          }
+        },
+        {
+          "name": "Sent updates (trainer)",
+          "request": {
+            "method": "GET",
+            "header": [ { "key": "Authorization", "value": "Bearer {{trainerToken}}" } ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/update/sent?limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "update", "sent"],
+              "query": [ { "key": "limit", "value": "20" } ]
+            }
+          }
+        },
+        {
+          "name": "Delete update (trainer)",
+          "request": {
+            "method": "DELETE",
+            "header": [ { "key": "Authorization", "value": "Bearer {{trainerToken}}" } ],
+            "url": { "raw": "{{baseUrl}}/api/v1/update/:id", "host": ["{{baseUrl}}"], "path": ["api", "v1", "update", ":id"], "variable": [ { "key": "id", "value": "<updateId>" } ] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Subscription",
+      "item": [
+        {
+          "name": "Status (user)",
+          "request": {
+            "method": "GET",
+            "header": [ { "key": "Authorization", "value": "Bearer {{userToken}}" } ],
+            "url": { "raw": "{{baseUrl}}/api/v1/subscription/status", "host": ["{{baseUrl}}"], "path": ["api", "v1", "subscription", "status"] }
+          }
+        },
+        {
+          "name": "Cancel subscription (user)",
+          "request": {
+            "method": "PATCH",
+            "header": [ { "key": "Authorization", "value": "Bearer {{userToken}}" } ],
+            "url": { "raw": "{{baseUrl}}/api/v1/subscription/:id/cancel", "host": ["{{baseUrl}}"], "path": ["api", "v1", "subscription", ":id", "cancel"], "variable": [ { "key": "id", "value": "<subscriptionId>" } ] }
+          }
+        },
+        {
+          "name": "Trainer subscribers (trainer)",
+          "request": {
+            "method": "GET",
+            "header": [ { "key": "Authorization", "value": "Bearer {{trainerToken}}" } ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/subscription/trainer?status=active",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "subscription", "trainer"],
+              "query": [ { "key": "status", "value": "active" } ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Payment",
+      "item": [
+        {
+          "name": "Verify payment (user)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{userToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"invoiceId\": \"<invoiceId>\",\n  \"transactionId\": \"txn_abc123\",\n  \"gateway\": \"stripe\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/payment/verify", "host": ["{{baseUrl}}"], "path": ["api", "v1", "payment", "verify"] }
+          }
+        },
+        {
+          "name": "My payments (user)",
+          "request": {
+            "method": "GET",
+            "header": [ { "key": "Authorization", "value": "Bearer {{userToken}}" } ],
+            "url": { "raw": "{{baseUrl}}/api/v1/payment/my", "host": ["{{baseUrl}}"], "path": ["api", "v1", "payment", "my"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Invoice",
+      "item": [
+        {
+          "name": "My invoices (user)",
+          "request": {
+            "method": "GET",
+            "header": [ { "key": "Authorization", "value": "Bearer {{userToken}}" } ],
+            "url": { "raw": "{{baseUrl}}/api/v1/invoice/my", "host": ["{{baseUrl}}"], "path": ["api", "v1", "invoice", "my"] }
+          }
+        },
+        {
+          "name": "Create invoice (trainer)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{trainerToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"requestId\": \"<trainerRequestId>\",\n  \"amount\": 49.99,\n  \"description\": \"1 month personal training\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/invoice", "host": ["{{baseUrl}}"], "path": ["api", "v1", "invoice"] }
+          }
+        },
+        {
+          "name": "Create renewal invoice (trainer)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{trainerToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"previousInvoiceId\": \"<invoiceId>\",\n  \"amount\": 49.99,\n  \"description\": \"Renewal — 1 month personal training\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/invoice/renewal", "host": ["{{baseUrl}}"], "path": ["api", "v1", "invoice", "renewal"] }
+          }
+        },
+        {
+          "name": "Trainer invoices (trainer)",
+          "request": {
+            "method": "GET",
+            "header": [ { "key": "Authorization", "value": "Bearer {{trainerToken}}" } ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/invoice/trainer?status=sent",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "invoice", "trainer"],
+              "query": [ { "key": "status", "value": "sent" } ]
+            }
+          }
+        },
+        {
+          "name": "Send invoice (trainer)",
+          "request": {
+            "method": "PATCH",
+            "header": [ { "key": "Authorization", "value": "Bearer {{trainerToken}}" } ],
+            "url": { "raw": "{{baseUrl}}/api/v1/invoice/:id/send", "host": ["{{baseUrl}}"], "path": ["api", "v1", "invoice", ":id", "send"], "variable": [ { "key": "id", "value": "<invoiceId>" } ] }
+          }
+        },
+        {
+          "name": "Get invoice by id (user or trainer)",
+          "request": {
+            "method": "GET",
+            "header": [ { "key": "Authorization", "value": "Bearer {{userToken}}" } ],
+            "url": { "raw": "{{baseUrl}}/api/v1/invoice/:id", "host": ["{{baseUrl}}"], "path": ["api", "v1", "invoice", ":id"], "variable": [ { "key": "id", "value": "<invoiceId>" } ] }
+          }
+        }
+      ]
+    }
+  ]
+}
