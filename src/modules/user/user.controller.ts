@@ -413,25 +413,66 @@ export const getSelfInfo = catchAsync(async (req: Request, res: Response) => {
   }
 });
 
+// ─────────────────────────────────────────────────────────────
+// Shared helper: save an uploaded image onto the user's document.
+// profilePicture and coverPhoto are common fields on UserModel, so
+// both regular users and trainers use the same record.
+// ─────────────────────────────────────────────────────────────
+const saveUserImage = async (
+  userId: string,
+  filename: string,
+  field: "profilePicture" | "coverPhoto",
+) => {
+  const updatedUser = await UserModel.findByIdAndUpdate(
+    userId,
+    { [field]: `/images/${filename}` },
+    { new: true },
+  ).select("-password");
+
+  if (!updatedUser) {
+    throw new ApiError(404, "User not found.");
+  }
+  return updatedUser;
+};
+
 export const uploadProfilePicture = catchAsync(
   async (req: Request, res: Response) => {
     const user = req.user as JwtPayloadWithUser;
-    const userId = user.id;
-    const payload: any = {};
-    if (req.file) {
-      payload.image = `/image/${req.file.filename}`;
+
+    if (!req.file) {
+      throw new ApiError(400, "Please upload a profile picture.");
     }
 
-    const uploadImage = await UserModel.findOneAndUpdate(
-      { _id: userId },
-      payload,
-    ).select("-password");
+    const data = await saveUserImage(
+      user.id,
+      req.file.filename,
+      "profilePicture",
+    );
 
     return sendResponse(res, {
       statusCode: 200,
       success: true,
-      message: "Image uploaded successfully",
-      data: uploadImage,
+      message: "Profile picture uploaded successfully",
+      data,
+    });
+  },
+);
+
+export const uploadCoverPhoto = catchAsync(
+  async (req: Request, res: Response) => {
+    const user = req.user as JwtPayloadWithUser;
+
+    if (!req.file) {
+      throw new ApiError(400, "Please upload a cover photo.");
+    }
+
+    const data = await saveUserImage(user.id, req.file.filename, "coverPhoto");
+
+    return sendResponse(res, {
+      statusCode: 200,
+      success: true,
+      message: "Cover photo uploaded successfully",
+      data,
     });
   },
 );

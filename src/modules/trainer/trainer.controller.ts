@@ -10,6 +10,8 @@ import {
 } from "./trainer.service";
 import { getBlocksByTrainer } from "../exerciseBlock/exerciseBlock.service";
 import { JwtPayloadWithUser } from "../../middlewares/userVerification";
+import sendResponse from "../../utils/sendResponse";
+import httpStatus from "http-status";
 
 // ─────────────────────────────────────────────────────────────
 // GET /trainers
@@ -20,12 +22,27 @@ export const getAllTrainers = async (
   res: Response,
 ): Promise<void> => {
   try {
-    const { specialty, verified } = req.query;
-    const trainers = await getAllTrainersService({
+    const { specialty, verified, search, page, limit } = req.query;
+
+    const { trainers, pagination } = await getAllTrainersService({
       specialty: specialty as string | undefined,
       isVerified: verified === undefined ? undefined : verified === "true",
+      search: search as string | undefined,
+      page: page ? parseInt(page as string, 10) : undefined,
+      limit: limit ? parseInt(limit as string, 10) : undefined,
     });
-    res.json({ success: true, data: trainers });
+
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: "Trainers retrieved successfully",
+      data: trainers,
+      pagination: {
+        ...pagination,
+        prevPage: pagination.prevPage ?? 0,
+        nextPage: pagination.nextPage ?? 0,
+      },
+    });
   } catch (err: any) {
     res.status(500).json({ success: false, message: err.message });
   }

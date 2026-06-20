@@ -121,6 +121,7 @@ const userSchema = new Schema<IUser>(
       default: "user",
     },
     profilePicture: { type: String, required: false },
+    coverPhoto: { type: String, required: false },
     bio: { type: String, required: false },
     isVerified: { type: Boolean, required: true, default: false },
     isDeleted: { type: Boolean, required: true, default: false },

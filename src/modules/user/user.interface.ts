@@ -128,6 +128,7 @@ export interface IUser extends Document {
   gender: TGender;
   role: TRole;
   profilePicture?: string;
+  coverPhoto?: string;
   bio?: string;
   isVerified: boolean;
   isDeleted: boolean;

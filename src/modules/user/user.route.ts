@@ -13,6 +13,7 @@ import {
   subscribeToTrainer,
   updateProfile,
   updateUser,
+  uploadCoverPhoto,
   uploadProfilePicture,
   UserController,
   verifyOTP,
@@ -150,9 +151,16 @@ router.get("/user-list", guardRole(["admin"]), UserController.getAllUsers);
 
 router.post(
   "/upload-profile-picture",
-  guardRole("user"),
+  guardRole(["user", "trainer"]),
   upload.single("profilePicture"),
   uploadProfilePicture,
+);
+
+router.post(
+  "/upload-cover-photo",
+  guardRole(["user", "trainer"]),
+  upload.single("coverPhoto"),
+  uploadCoverPhoto,
 );
 
 export const UserRoutes = router;

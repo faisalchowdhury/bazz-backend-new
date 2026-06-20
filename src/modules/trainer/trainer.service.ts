@@ -2,6 +2,7 @@ import { TrainerModel } from "./trainer.model";
 import { ITrainer } from "./trainer.interface";
 import { getBlocksByTrainer } from "../exerciseBlock/exerciseBlock.service";
 import { getKnowledgePackService } from "../trainerKnowledge/trainerKnowledge.service";
+import paginationBuilder from "../../utils/paginationBuilder";
 
 // ─────────────────────────────────────────────────────────────
 // BUILD SYSTEM PROMPT (generated — never taken from request body)
@@ -42,17 +43,40 @@ const buildSystemPrompt = (data: Partial<ITrainer>): string => {
 // ─────────────────────────────────────────────────────────────
 
 export const getAllTrainers = async (
-  filters: { specialty?: string; isVerified?: boolean } = {},
+  filters: {
+    specialty?: string;
+    isVerified?: boolean;
+    search?: string;
+    page?: number;
+    limit?: number;
+  } = {},
 ) => {
+  const page = filters.page && filters.page > 0 ? filters.page : 1;
+  const limit = filters.limit && filters.limit > 0 ? filters.limit : 10;
+  const skip = (page - 1) * limit;
+
   const query: any = { isActive: true };
   if (filters.specialty) query.specialty = filters.specialty;
   if (filters.isVerified !== undefined) query.isVerified = filters.isVerified;
+  if (filters.search?.trim()) {
+    query.name = { $regex: filters.search.trim(), $options: "i" };
+  }
 
-  return await TrainerModel.find(query)
-    .select(
-      "name specialty certifications trainingStyleTags profileImage subscriptionPrice subscriberCount bio",
-    )
-    .lean();
+  const [trainers, totalData] = await Promise.all([
+    TrainerModel.find(query)
+      .select(
+        "name specialty certifications trainingStyleTags profileImage subscriptionPrice subscriberCount bio",
+      )
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean(),
+    TrainerModel.countDocuments(query),
+  ]);
+
+  const pagination = paginationBuilder({ totalData, currentPage: page, limit });
+
+  return { trainers, pagination };
 };
 
 // ─────────────────────────────────────────────────────────────
