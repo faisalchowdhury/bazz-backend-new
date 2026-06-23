@@ -82,4 +82,6 @@ export const seedCommitionRate = async () => {
     });
   }
 };
+
+export { seedBuiltInTrainers } from "./seedBuiltInTrainers";
 export default seedSuperAdmin;

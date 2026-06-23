@@ -9,6 +9,7 @@ import seedSuperAdmin, {
   seedPrivacy,
   seedTerms,
 } from "./DB"; // Seeding function
+import { seedBuiltInTrainers } from "./DB/seedBuiltInTrainers";
 
 let server: HttpServer;
 import dns from "dns";
@@ -62,6 +63,7 @@ async function main() {
       seedTerms(),
       seedAbout(),
       seedCommitionRate(),
+      seedBuiltInTrainers(),
     ]);
   } catch (error) {
     console.error("Error in main function:", error);

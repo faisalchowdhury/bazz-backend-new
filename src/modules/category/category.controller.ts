@@ -101,7 +101,7 @@ export const getCategoryById = async (
   res: Response,
 ): Promise<void> => {
   try {
-    const { trainerId } = req.query;
+    const { trainerId } = req.params;
 
     if (!trainerId) {
       res.status(400).json({

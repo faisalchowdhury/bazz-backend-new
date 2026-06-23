@@ -9,7 +9,7 @@ export const twilioAuthToken = process.env.TWILIO_AUTH_TOKEN;
 export const twilioPhoneNumber = process.env.TWILIO_PHONE_NUMBER;
 
 // export const PORT = 8085; //------> production;
-export const PORT = 4001; //------> development;
+export const PORT = 8080; //------> development;
 export const DATABASE_URL = process.env.DATABASE_URL;
 export const JWT_SECRET_KEY = process.env.JWT_SECRET_KEY;
 export const Nodemailer_GMAIL = process.env.Nodemailer_GMAIL;

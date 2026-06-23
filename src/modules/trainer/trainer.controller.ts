@@ -22,11 +22,12 @@ export const getAllTrainers = async (
   res: Response,
 ): Promise<void> => {
   try {
-    const { specialty, verified, search, page, limit } = req.query;
+    const { specialty, verified, search, page, limit, isBuiltIn } = req.query;
 
     const { trainers, pagination } = await getAllTrainersService({
       specialty: specialty as string | undefined,
       isVerified: verified === undefined ? undefined : verified === "true",
+      isBuiltIn: isBuiltIn === undefined ? undefined : isBuiltIn === "true",
       search: search as string | undefined,
       page: page ? parseInt(page as string, 10) : undefined,
       limit: limit ? parseInt(limit as string, 10) : undefined,

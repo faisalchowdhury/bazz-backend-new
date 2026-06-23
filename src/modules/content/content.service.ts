@@ -1,79 +1,8 @@
-import { ICategory } from "../category/category.interface";
 import { CategoryModel } from "../category/category.model";
 import { TrainerModel } from "../trainer/trainer.model";
 
 import { IContent } from "./content.interface";
 import { ContentModel } from "./content.model";
-
-// ─────────────────────────────────────────────────────────────
-// CATEGORY SERVICES
-// ─────────────────────────────────────────────────────────────
-
-// Helper — get trainerId from userId
-const getTrainerIdFromUserId = async (userId: string) => {
-  const trainer = await TrainerModel.findOne({ userId });
-  if (!trainer) throw new Error("Trainer not found");
-  return trainer._id;
-};
-
-export const createCategoryService = async (
-  userId: string,
-  data: Partial<ICategory>,
-) => {
-  const trainerId = await getTrainerIdFromUserId(userId);
-  return await CategoryModel.create({ trainerId, ...data });
-};
-
-export const getCategoriesService = async (trainerId: string) => {
-  return await CategoryModel.find({ trainerId, isActive: true })
-    .sort({ category: 1 })
-    .lean();
-};
-
-export const getCategoryByIdService = async (id: string, trainerId: string) => {
-  const category = await CategoryModel.findOne({ _id: id, trainerId });
-  if (!category) throw new Error("Category not found");
-  return category;
-};
-
-export const updateCategoryService = async (
-  userId: string,
-  id: string,
-  data: Partial<ICategory>,
-) => {
-  // Bug fixed: findOne not find, use _id in query
-  const trainer = await TrainerModel.findOne({ userId });
-  if (!trainer) throw new Error("Trainer not found");
-
-  const result = await CategoryModel.findOneAndUpdate(
-    { _id: id, trainerId: trainer._id },
-    { $set: data },
-    { new: true },
-  );
-
-  if (!result)
-    throw new Error("Category not found or does not belong to this trainer");
-  return result;
-};
-
-export const deleteCategoryService = async (userId: string, id: string) => {
-  const trainer = await TrainerModel.findOne({ userId });
-  if (!trainer) throw new Error("Trainer not found");
-
-  // Soft delete — don't actually remove, just deactivate
-  const result = await CategoryModel.findOneAndUpdate(
-    { _id: id, trainerId: trainer._id },
-    { $set: { isActive: false } },
-    { new: true },
-  );
-
-  if (!result) throw new Error("Category not found");
-  return result;
-};
-
-// ─────────────────────────────────────────────────────────────
-// CONTENT SERVICES
-// ─────────────────────────────────────────────────────────────
 
 export const createContentService = async (
   userId: string,
@@ -141,6 +70,61 @@ export const getContentByTrainerService = async (
   return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
 };
 
+export const getMyContent = async (
+  userId: string,
+  filters: {
+    categoryId?: string;
+    muscleGroup?: string;
+    difficulty?: string;
+    isPublished?: boolean;
+    search?: string;
+    limit?: number;
+    page?: number;
+  } = {},
+) => {
+  const trainer = await TrainerModel.findOne({ userId });
+  if (!trainer) throw new Error("Trainer not found");
+
+  if (filters.categoryId) {
+    const category = await CategoryModel.findOne({
+      _id: filters.categoryId,
+      trainerId: trainer._id,
+    });
+    if (!category)
+      throw new Error("Category not found or does not belong to this trainer");
+  }
+
+  return getContentByTrainerService(String(trainer._id), filters);
+};
+
+export const getContentByCategoryService = async (
+  categoryId: string,
+  filters: {
+    isPublished?: boolean;
+    limit?: number;
+    page?: number;
+  } = {},
+) => {
+  const query: any = { categoryId, isActive: true };
+  if (filters.isPublished !== undefined) query.isPublished = filters.isPublished;
+
+  const limit = filters.limit || 20;
+  const page = filters.page || 1;
+  const skip = (page - 1) * limit;
+
+  const [data, total] = await Promise.all([
+    ContentModel.find(query)
+      .populate("categoryId", "category slug")
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean(),
+    ContentModel.countDocuments(query),
+  ]);
+
+  return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
+};
+
 export const getContentByIdService = async (id: string) => {
   const content = await ContentModel.findByIdAndUpdate(
     id,
@@ -160,7 +144,6 @@ export const updateContentService = async (
   const trainer = await TrainerModel.findOne({ userId });
   if (!trainer) throw new Error("Trainer not found");
 
-  // Use save() to trigger pre-save hook that rebuilds searchText
   const content = await ContentModel.findOne({
     _id: id,
     trainerId: trainer._id,
@@ -168,7 +151,12 @@ export const updateContentService = async (
   if (!content)
     throw new Error("Content not found or does not belong to this trainer");
 
-  Object.assign(content, data);
+  // Only apply fields that were actually sent (ignore undefined from partial form)
+  const updates = Object.fromEntries(
+    Object.entries(data).filter(([, value]) => value !== undefined),
+  );
+
+  Object.assign(content, updates);
   return await content.save();
 };
 

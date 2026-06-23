@@ -1,14 +1,11 @@
 import { Router } from "express";
-import { protect } from "../../middlewares/auth";
+import upload from "../../multer/multer";
 import { guardRole } from "../../middlewares/roleGuard";
 import {
-  createCategory,
-  getCategories,
-  getCategoryById,
-  updateCategory,
-  deleteCategory,
   createContent,
   getContent,
+  getMyContentController,
+  getContentByCategory,
   getContentById,
   updateContent,
   publishContent,
@@ -17,57 +14,21 @@ import {
 
 const router = Router();
 
-// ── Category Routes ───────────────────────────────────────────
-
-// Public — users can browse categories
-router.get("/categories", getCategories);
-router.get("/categories/:id", getCategoryById);
-
-// Trainer only
-router.post(
-  "/categories",
-
-  guardRole(["trainer"]),
-  createCategory,
-);
-router.put(
-  "/categories/:id",
-
-  guardRole(["trainer"]),
-  updateCategory,
-);
-router.delete(
-  "/categories/:id",
-
-  guardRole(["trainer"]),
-  deleteCategory,
-);
-
-// ── Content Routes ────────────────────────────────────────────
+const contentUpload = upload.fields([
+  { name: "video", maxCount: 1 },
+  { name: "thumbnail", maxCount: 1 },
+]);
 
 // Public — users can browse + watch published content
-router.get("/content", getContent);
+router.get("/", getContent);
+router.get("/my-content", guardRole(["trainer"]), getMyContentController);
+router.get("/category/:categoryId", getContentByCategory);
 router.get("/content/:id", getContentById);
 
-// Trainer only
-router.post("/content", guardRole(["trainer"]), createContent);
-router.put(
-  "/content/:id",
-
-  guardRole(["trainer"]),
-  updateContent,
-);
-router.patch(
-  "/content/:id/publish",
-
-  guardRole(["trainer"]),
-  publishContent,
-);
-router.delete(
-  "/content/:id",
-
-  guardRole(["trainer"]),
-  deleteContent,
-);
+// Trainer only — multipart/form-data with video file upload
+router.post("/content", guardRole(["trainer"]), contentUpload, createContent);
+router.put("/content/:id", guardRole(["trainer"]), contentUpload, updateContent);
+router.patch("/content/:id/publish", guardRole(["trainer"]), publishContent);
+router.delete("/content/:id", guardRole(["trainer"]), deleteContent);
 
 export const ContentRoutes = router;

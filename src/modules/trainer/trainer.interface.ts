@@ -7,6 +7,12 @@ export type TrainerSpecialty =
   | "nutrition"
   | "boxing";
 
+export type TrainerOnboardingGoal =
+  | "maintain_physique"
+  | "muscle_gain"
+  | "weight_loss"
+  | "boxing";
+
 // ─────────────────────────────────────────────────────────────
 // ANAM AI PERSONA (new)
 // Trainer sets their personaId from Anam dashboard via app form
@@ -47,6 +53,13 @@ export interface ITrainer extends Document {
 
   // Default app trainer for promo-code / website subscribers
   isDefault?: boolean;
+
+  // Built-in P2P trainers (seeded, goal-mapped at onboarding)
+  isBuiltIn?: boolean;
+  personaKey?: string;
+  slug?: string;
+  onboardingGoal?: TrainerOnboardingGoal;
+  onboardingPriority?: number;
 
   createdAt: Date;
   updatedAt: Date;

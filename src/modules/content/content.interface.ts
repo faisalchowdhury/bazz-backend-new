@@ -33,8 +33,8 @@ export interface IContent extends Document {
   description: string; // detailed description — used by AI for matching
   contentType: TContentType;
 
-  // Video specific
-  videoUrl?: string; // hosted video URL (e.g. S3, YouTube, Vimeo)
+  // Video specific — stored paths served from /public (e.g. /media/file.mp4, /images/thumb.jpg)
+  videoUrl?: string;
   thumbnailUrl?: string;
   durationSeconds?: number; // video length in seconds
 

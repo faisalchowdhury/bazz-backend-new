@@ -23,15 +23,16 @@ router.get("/", getCategories);
 // Get by slug — must be before /:id to avoid conflict
 router.get("/slug/:slug", getCategoryBySlug);
 
-// GET /categories/:id?trainerId=
-// Get single category by MongoDB _id
-router.get("/:id", getCategoryById);
-
 // ── Protected trainer routes ──────────────────────────────────
 
 // GET /categories/my
 // Trainer dashboard — get own categories (no trainerId needed in query)
+// Must be before /:id so "my" isn't treated as an :id param
 router.get("/my", guardRole(["trainer"]), getMyCategoriesController);
+
+// GET /categories/:id?trainerId=
+// Get single category by MongoDB _id
+router.get("/:id", getCategoryById);
 
 // POST /categories
 // Create a new category

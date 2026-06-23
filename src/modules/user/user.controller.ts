@@ -1255,8 +1255,7 @@ export const completeOnboarding = async (
 
     res.json({
       success: true,
-      message:
-        "Onboarding complete! Browse trainers and send a request to get started.",
+      message: "Onboarding complete! Your AI trainer has been assigned.",
       data: result,
     });
   } catch (err: any) {

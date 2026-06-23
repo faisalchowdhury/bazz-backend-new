@@ -1,131 +1,33 @@
 import { Request, Response } from "express";
 import { JwtPayloadWithUser } from "../../middlewares/userVerification";
 import {
-  createCategoryService,
-  getCategoriesService,
-  getCategoryByIdService,
-  updateCategoryService,
-  deleteCategoryService,
   createContentService,
   getContentByTrainerService,
+  getMyContent,
+  getContentByCategoryService,
   getContentByIdService,
   updateContentService,
   publishContentService,
   deleteContentService,
 } from "./content.service";
+import { applyContentUploads, parseContentFormBody } from "./content.utils";
 
-// ─────────────────────────────────────────────────────────────
-// CATEGORY CONTROLLERS
-// ─────────────────────────────────────────────────────────────
-
-// POST /categories
-export const createCategory = async (
-  req: Request,
-  res: Response,
-): Promise<void> => {
-  try {
-    const user = req.user as JwtPayloadWithUser;
-    const result = await createCategoryService(user.id, req.body);
-    res.status(201).json({ success: true, data: result });
-  } catch (err: any) {
-    res.status(400).json({ success: false, message: err.message });
-  }
-};
-
-// GET /categories?trainerId=...
-export const getCategories = async (
-  req: Request,
-  res: Response,
-): Promise<void> => {
-  try {
-    const { trainerId } = req.query;
-    if (!trainerId) {
-      res
-        .status(400)
-        .json({ success: false, message: "trainerId is required" });
-      return;
-    }
-    const result = await getCategoriesService(trainerId as string);
-    res.json({ success: true, data: result });
-  } catch (err: any) {
-    res.status(500).json({ success: false, message: err.message });
-  }
-};
-
-// GET /categories/:id
-export const getCategoryById = async (
-  req: Request,
-  res: Response,
-): Promise<void> => {
-  try {
-    const { trainerId } = req.query;
-    if (!trainerId) {
-      res
-        .status(400)
-        .json({ success: false, message: "trainerId is required" });
-      return;
-    }
-    const result = await getCategoryByIdService(
-      req.params.id,
-      trainerId as string,
-    );
-    res.json({ success: true, data: result });
-  } catch (err: any) {
-    res.status(404).json({ success: false, message: err.message });
-  }
-};
-
-// PUT /categories/:id  ← FIXED VERSION
-export const updateCategory = async (
-  req: Request,
-  res: Response,
-): Promise<void> => {
-  try {
-    const user = req.user as JwtPayloadWithUser;
-    const result = await updateCategoryService(
-      user.id,
-      req.params.id,
-      req.body,
-    );
-    res.json({ success: true, data: result });
-  } catch (err: any) {
-    res.status(400).json({ success: false, message: err.message });
-  }
-};
-
-// DELETE /categories/:id
-export const deleteCategory = async (
-  req: Request,
-  res: Response,
-): Promise<void> => {
-  try {
-    const user = req.user as JwtPayloadWithUser;
-    await deleteCategoryService(user.id, req.params.id);
-    res.json({ success: true, message: "Category deleted" });
-  } catch (err: any) {
-    res.status(400).json({ success: false, message: err.message });
-  }
-};
-
-// ─────────────────────────────────────────────────────────────
-// CONTENT CONTROLLERS
-// ─────────────────────────────────────────────────────────────
-
-// POST /content
+// POST /content/content  (multipart: video + optional thumbnail)
 export const createContent = async (
   req: Request,
   res: Response,
 ): Promise<void> => {
   try {
     const user = req.user as JwtPayloadWithUser;
+    const payload = applyContentUploads(parseContentFormBody(req.body), req);
 
-    if (!req.body.categoryId) {
+    if (!payload.categoryId) {
       res
         .status(400)
         .json({ success: false, message: "categoryId is required" });
       return;
     }
-    if (!req.body.title || !req.body.description) {
+    if (!payload.title || !payload.description) {
       res.status(400).json({
         success: false,
         message: "title and description are required",
@@ -133,7 +35,16 @@ export const createContent = async (
       return;
     }
 
-    const result = await createContentService(user.id, req.body);
+    const contentType = payload.contentType || "video";
+    if (contentType === "video" && !payload.videoUrl) {
+      res.status(400).json({
+        success: false,
+        message: "video file is required for video content",
+      });
+      return;
+    }
+
+    const result = await createContentService(user.id, payload as any);
     res.status(201).json({ success: true, data: result });
   } catch (err: any) {
     res.status(400).json({ success: false, message: err.message });
@@ -181,6 +92,62 @@ export const getContent = async (
   }
 };
 
+// GET /content/my-content?categoryId=&muscleGroup=&difficulty=&search=&page=&limit=&isPublished=
+export const getMyContentController = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  try {
+    const user = req.user as JwtPayloadWithUser;
+    const {
+      categoryId,
+      muscleGroup,
+      difficulty,
+      search,
+      page,
+      limit,
+      isPublished,
+    } = req.query;
+
+    const result = await getMyContent(user.id, {
+      categoryId: categoryId as string | undefined,
+      muscleGroup: muscleGroup as string | undefined,
+      difficulty: difficulty as string | undefined,
+      search: search as string | undefined,
+      isPublished:
+        isPublished !== undefined ? isPublished === "true" : undefined,
+      page: page ? parseInt(page as string) : 1,
+      limit: limit ? parseInt(limit as string) : 20,
+    });
+
+    res.status(200).json({ success: true, ...result });
+  } catch (err: any) {
+    const status = err.message.includes("Category not found") ? 400 : 500;
+    res.status(status).json({ success: false, message: err.message });
+  }
+};
+
+// GET /content/category/:categoryId?isPublished=&page=&limit=
+export const getContentByCategory = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  try {
+    const { isPublished, page, limit } = req.query;
+
+    const result = await getContentByCategoryService(req.params.categoryId, {
+      isPublished:
+        isPublished !== undefined ? isPublished === "true" : undefined,
+      page: page ? parseInt(page as string) : 1,
+      limit: limit ? parseInt(limit as string) : 20,
+    });
+
+    res.json({ success: true, ...result });
+  } catch (err: any) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
 // GET /content/:id
 export const getContentById = async (
   req: Request,
@@ -194,14 +161,20 @@ export const getContentById = async (
   }
 };
 
-// PUT /content/:id
+// PUT /content/content/:id  (multipart: optional video + thumbnail)
 export const updateContent = async (
   req: Request,
   res: Response,
 ): Promise<void> => {
   try {
     const user = req.user as JwtPayloadWithUser;
-    const result = await updateContentService(user.id, req.params.id, req.body);
+    const payload = applyContentUploads(parseContentFormBody(req.body), req);
+
+    const result = await updateContentService(
+      user.id,
+      req.params.id,
+      payload as any,
+    );
     res.json({ success: true, data: result });
   } catch (err: any) {
     res.status(400).json({ success: false, message: err.message });

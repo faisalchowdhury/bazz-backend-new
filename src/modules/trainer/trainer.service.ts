@@ -3,6 +3,8 @@ import { ITrainer } from "./trainer.interface";
 import { getBlocksByTrainer } from "../exerciseBlock/exerciseBlock.service";
 import { getKnowledgePackService } from "../trainerKnowledge/trainerKnowledge.service";
 import paginationBuilder from "../../utils/paginationBuilder";
+import { UserModel } from "../user/user.model";
+import { TGoal } from "../user/user.interface";
 
 // ─────────────────────────────────────────────────────────────
 // BUILD SYSTEM PROMPT (generated — never taken from request body)
@@ -46,6 +48,7 @@ export const getAllTrainers = async (
   filters: {
     specialty?: string;
     isVerified?: boolean;
+    isBuiltIn?: boolean;
     search?: string;
     page?: number;
     limit?: number;
@@ -58,6 +61,7 @@ export const getAllTrainers = async (
   const query: any = { isActive: true };
   if (filters.specialty) query.specialty = filters.specialty;
   if (filters.isVerified !== undefined) query.isVerified = filters.isVerified;
+  if (filters.isBuiltIn !== undefined) query.isBuiltIn = filters.isBuiltIn;
   if (filters.search?.trim()) {
     query.name = { $regex: filters.search.trim(), $options: "i" };
   }
@@ -67,6 +71,7 @@ export const getAllTrainers = async (
       .select(
         "name specialty certifications trainingStyleTags profileImage subscriptionPrice subscriberCount bio",
       )
+      .populate("userId", "firstName lastName profilePicture coverPhoto")
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
@@ -74,9 +79,23 @@ export const getAllTrainers = async (
     TrainerModel.countDocuments(query),
   ]);
 
+  // Ensure profilePicture / coverPicture are always present.
+  // Fall back to "" when the trainer's user hasn't uploaded them.
+  const normalizedTrainers = trainers.map((trainer: any) => {
+    const user = trainer.userId || {};
+    return {
+      ...trainer,
+      userId: {
+        ...user,
+        profilePicture: user.profilePicture || "",
+        coverPicture: user.coverPhoto || "",
+      },
+    };
+  });
+
   const pagination = paginationBuilder({ totalData, currentPage: page, limit });
 
-  return { trainers, pagination };
+  return { trainers: normalizedTrainers, pagination };
 };
 
 // ─────────────────────────────────────────────────────────────
@@ -84,9 +103,23 @@ export const getAllTrainers = async (
 // ─────────────────────────────────────────────────────────────
 
 export const getTrainerById = async (trainerId: string) => {
-  return await TrainerModel.findById(trainerId)
-    .populate("userId", "firstName lastName email")
+  const trainer: any = await TrainerModel.findById(trainerId)
+    .populate("userId", "firstName lastName email profilePicture coverPhoto")
     .lean();
+
+  if (!trainer) return trainer;
+
+  // Ensure profilePicture / coverPicture are always present.
+  // Fall back to "" when the trainer's user hasn't uploaded them.
+  const user = trainer.userId || {};
+  return {
+    ...trainer,
+    userId: {
+      ...user,
+      profilePicture: user.profilePicture || "",
+      coverPicture: user.coverPhoto || "",
+    },
+  };
 };
 
 // ─────────────────────────────────────────────────────────────
@@ -120,9 +153,129 @@ export const getTrainerBySpecialty = async (specialty: string) => {
     isVerified: true,
   })
     .select(
-      "name specialty systemPrompt certifications profileImage trainingStyleTags",
+      "name specialty systemPrompt certifications profileImage trainingStyleTags slug personaKey isBuiltIn onboardingGoal onboardingPriority",
     )
+    .sort({ isBuiltIn: -1, onboardingPriority: 1, name: 1 })
     .lean();
+};
+
+// ─────────────────────────────────────────────────────────────
+// BUILT-IN TRAINER RESOLUTION (onboarding auto-assign)
+// ─────────────────────────────────────────────────────────────
+
+export const resolveBuiltInTrainerForGoal = async (
+  goal: TGoal,
+  preferredTrainerId?: string,
+): Promise<ITrainer> => {
+  if (preferredTrainerId) {
+    const preferred = await TrainerModel.findOne({
+      _id: preferredTrainerId,
+      isBuiltIn: true,
+      isActive: true,
+      isVerified: true,
+    });
+    if (!preferred) {
+      throw new Error("Preferred trainer not found or is not a built-in trainer");
+    }
+    if (preferred.onboardingGoal && preferred.onboardingGoal !== goal) {
+      throw new Error(
+        `Trainer ${preferred.name} does not match your selected goal`,
+      );
+    }
+    return preferred;
+  }
+
+  const trainer = await TrainerModel.findOne({
+    isBuiltIn: true,
+    isActive: true,
+    isVerified: true,
+    onboardingGoal: goal,
+  }).sort({ onboardingPriority: 1, createdAt: 1 });
+
+  if (!trainer) {
+    throw new Error(`No built-in trainer configured for goal: ${goal}`);
+  }
+
+  return trainer;
+};
+
+export const assignBuiltInTrainerOnboarding = async (
+  userId: string,
+  goal: TGoal,
+  options: {
+    preferredTrainerId?: string;
+    preferredName?: string;
+    motivationStyle?: string;
+    fitnessLevel?: string;
+    availableEquipment?: string;
+    trainingDaysPerWeek?: number;
+    injuries?: string[];
+  } = {},
+) => {
+  const trainerDoc = await resolveBuiltInTrainerForGoal(
+    goal,
+    options.preferredTrainerId,
+  );
+  const trainerId = trainerDoc.id;
+
+  const user = await UserModel.findById(userId);
+  if (!user) throw new Error("User not found");
+
+  const existingMemory = user.getMemoryForTrainer(trainerId);
+
+  const updateData: Record<string, unknown> = {
+    $set: {
+      subscribedTrainer: trainerDoc._id,
+      subscriptionTier: "free",
+      subscriptionStartDate: new Date(),
+    },
+  };
+
+  if (!existingMemory) {
+    const motivationStyles = ["tough_love", "gentle", "balanced"] as const;
+    const motivationStyle =
+      options.motivationStyle &&
+      motivationStyles.includes(options.motivationStyle as (typeof motivationStyles)[number])
+        ? options.motivationStyle
+        : "balanced";
+
+    updateData.$push = {
+      memory: {
+        trainerId: trainerDoc._id,
+        profileMemory: {
+          preferredName: options.preferredName || user.firstName,
+          goal,
+          experienceLevel: options.fitnessLevel || user.fitnessLevel,
+          scheduleDaysPerWeek:
+            options.trainingDaysPerWeek || user.trainingDaysPerWeek,
+          equipment: options.availableEquipment || user.availableEquipment,
+          limitations: (options.injuries || user.injuries || []).join(", ") || "none",
+          preferences: "",
+          motivationStyle,
+          updatedAt: new Date(),
+        },
+        rollingMemory: {
+          last3Sessions: [],
+          lastKnownLoads: {},
+          adherenceNotes: "",
+          recoveryNotes: "",
+          flags: [],
+          updatedAt: new Date(),
+        },
+        lastUpdatedAt: new Date(),
+      },
+    };
+  }
+
+  await UserModel.findByIdAndUpdate(userId, updateData);
+
+  return {
+    trainerId,
+    trainerName: trainerDoc.name,
+    specialty: trainerDoc.specialty,
+    personaKey: trainerDoc.personaKey,
+    subscriptionTier: "free" as const,
+  };
 };
 
 // ─────────────────────────────────────────────────────────────

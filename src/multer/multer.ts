@@ -1,3 +1,4 @@
+import fs from "fs";
 import multer, { FileFilterCallback } from "multer";
 import path from "path";
 import { Express } from "express";
@@ -53,6 +54,7 @@ const storage = multer.diskStorage({
       folder = "public/documents";
     }
 
+    fs.mkdirSync(folder, { recursive: true });
     cb(null, folder);
   },
   filename: function (

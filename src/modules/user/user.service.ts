@@ -23,6 +23,7 @@ import {
 
 import { JwtPayloadWithUser } from "../../middlewares/userVerification";
 import { TrainerModel } from "../trainer/trainer.model";
+import { assignBuiltInTrainerOnboarding } from "../trainer/trainer.service";
 
 export const registerUserService = async (data: any) => {
   const {
@@ -455,6 +456,7 @@ export const completeOnboarding = async (
     preferredName?: string;
     motivationStyle?: string;
     preferences?: string;
+    preferredTrainerId?: string;
   },
 ) => {
   const user = await UserModel.findByIdAndUpdate(
@@ -471,19 +473,36 @@ export const completeOnboarding = async (
         trainingDaysPerWeek: data.trainingDaysPerWeek,
         injuries: data.injuries || [],
         onboardingCompleted: true,
-        // ─────────────────────────────────────────────────────
-        // NOT setting subscribedTrainer here
-        // NOT setting subscriptionTier here
-        // NOT setting subscriptionStartDate here
-        // These are set in payment.service.ts → verifyPayment()
-        // after user pays for a trainer plan or default plan
-        // ─────────────────────────────────────────────────────
       },
     },
     { new: true },
   ).select("-password");
 
-  return { user };
+  if (!user) throw new Error("User not found");
+
+  const assignedTrainer = await assignBuiltInTrainerOnboarding(
+    userId,
+    data.primaryGoal,
+    {
+      preferredTrainerId: data.preferredTrainerId,
+      preferredName: data.preferredName,
+      motivationStyle: data.motivationStyle,
+      fitnessLevel: data.fitnessLevel,
+      availableEquipment: data.availableEquipment,
+      trainingDaysPerWeek: data.trainingDaysPerWeek,
+      injuries: data.injuries,
+    },
+  );
+
+  const populatedUser = await UserModel.findById(userId)
+    .populate(
+      "subscribedTrainer",
+      "name specialty certifications profileImage trainingStyleTags slug personaKey",
+    )
+    .select("-password")
+    .lean();
+
+  return { user: populatedUser, assignedTrainer };
 };
 
 // ─────────────────────────────────────────────────────────────
