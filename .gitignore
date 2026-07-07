@@ -4,3 +4,4 @@ node_modules
 /src/logger/logs
 /logs
 /dist
+/public/media
