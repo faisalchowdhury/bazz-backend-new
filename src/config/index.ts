@@ -1,6 +1,6 @@
 import dotenv from "dotenv";
 import path from "path";
-dotenv.config({ path: path.join((process.cwd(), ".env")) });
+dotenv.config({ path: path.join(process.cwd(), ".env") });
 
 // Twilio Config
 
@@ -25,6 +25,10 @@ export const NODE_ENV = process.env.NODE_ENV;
 // Fallback default app trainer for promo / website subscribers
 // (preferred: mark a Trainer with isDefault=true via POST /promo/default-trainer)
 export const DEFAULT_TRAINER_ID = process.env.DEFAULT_TRAINER_ID;
+export const ANAM_API_KEY = process.env.ANAM_API_KEY || "";
+/** Disables Anam's built-in LLM — Flutter uses Bazz /anam/session/:id/message + talk() */
+export const ANAM_CUSTOM_LLM_ID =
+  process.env.ANAM_CUSTOM_LLM_ID || "CUSTOMER_CLIENT_V1";
 export const REDIS_HOST = "localhost";
 export const REDIS_PORT = 8002;
 export const REDIS_PASSWORD = process.env.REDIS_PASSWORD;

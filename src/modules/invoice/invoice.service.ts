@@ -8,6 +8,11 @@ import { TrainerModel } from "../trainer/trainer.model";
 import { UserModel } from "../user/user.model";
 import { IInvoice } from "./invoice.interface";
 import { TrainerRequestModel } from "../trainerRequest/trainerRequest.model";
+import paginationBuilder from "../../utils/paginationBuilder";
+import {
+  TRAINER_VIEW_USER_SELECT,
+  formatUserForTrainerView,
+} from "../user/user.serializer";
 
 // ─────────────────────────────────────────────────────────────
 // HELPER — GENERATE INVOICE NUMBER
@@ -420,13 +425,60 @@ export const getInvoiceById = async (invoiceId: string, userId: string) => {
 
 export const getTrainerInvoices = async (
   trainerId: string,
-  status?: string,
+  filters: {
+    status?: string;
+    search?: string;
+    page?: number;
+    limit?: number;
+  } = {},
 ) => {
-  const query: any = { trainerId };
-  if (status) query.status = status;
+  const query: Record<string, unknown> = { trainerId };
+  if (filters.status) query.status = filters.status;
 
-  return await InvoiceModel.find(query)
-    .populate("userId", "firstName lastName email profilePicture")
-    .sort({ createdAt: -1 })
-    .lean();
+  const search = filters.search?.trim();
+  if (search) {
+    const searchRegex = new RegExp(search, "i");
+    const matchingUsers = await UserModel.find({
+      $or: [
+        { firstName: searchRegex },
+        { lastName: searchRegex },
+        {
+          $expr: {
+            $regexMatch: {
+              input: { $concat: ["$firstName", " ", "$lastName"] },
+              regex: search,
+              options: "i",
+            },
+          },
+        },
+      ],
+    }).select("_id");
+
+    query.userId = { $in: matchingUsers.map((user) => user._id) };
+  }
+
+  const page = filters.page && filters.page > 0 ? filters.page : 1;
+  const limit = filters.limit && filters.limit > 0 ? filters.limit : 10;
+  const skip = (page - 1) * limit;
+
+  const [data, totalData] = await Promise.all([
+    InvoiceModel.find(query)
+      .populate({ path: "userId", select: TRAINER_VIEW_USER_SELECT })
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean(),
+    InvoiceModel.countDocuments(query),
+  ]);
+
+  const pagination = paginationBuilder({ totalData, currentPage: page, limit });
+
+  const enrichedData = data.map((invoice) => ({
+    ...invoice,
+    userId: formatUserForTrainerView(
+      invoice.userId as unknown as Record<string, unknown>,
+    ),
+  }));
+
+  return { data: enrichedData, pagination };
 };

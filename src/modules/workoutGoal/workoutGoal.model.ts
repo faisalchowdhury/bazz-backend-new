@@ -86,6 +86,7 @@ const aiGeneratedPlanSchema = new Schema(
 
     estimatedDurationMinutes: { type: Number },
     cardioGuidance: { type: String },
+    suggestedVideo: { type: String },
 
     checkInQuestion: { type: String },
     checkInResponse: { type: String },

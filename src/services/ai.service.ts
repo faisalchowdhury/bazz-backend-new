@@ -10,6 +10,8 @@ interface ICallAIParams {
   userMessage: string;
   maxTokens?: number;
   conversationHistory?: Array<{ role: "user" | "assistant"; content: string }>;
+  /** Pre-fill assistant with "{" so the model continues valid JSON */
+  jsonPrefill?: boolean;
 }
 
 interface IMemoryUpdateResult {
@@ -38,11 +40,16 @@ export const callAI = async ({
   userMessage,
   maxTokens = 2000,
   conversationHistory = [],
+  jsonPrefill = false,
 }: ICallAIParams): Promise<string> => {
-  const messages = [
+  const messages: Array<{ role: "user" | "assistant"; content: string }> = [
     ...conversationHistory,
-    { role: "user" as const, content: userMessage },
+    { role: "user", content: userMessage },
   ];
+
+  if (jsonPrefill) {
+    messages.push({ role: "assistant", content: "{" });
+  }
 
   const response = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
@@ -53,7 +60,7 @@ export const callAI = async ({
     },
 
     body: JSON.stringify({
-      model: "claude-sonnet-4-20250514",
+      model: process.env.ANTHROPIC_MODEL || "claude-sonnet-4-6",
       max_tokens: maxTokens,
       system: systemPrompt,
       messages,
@@ -66,7 +73,132 @@ export const callAI = async ({
   }
 
   const data = await response.json();
-  return (data.content?.[0]?.text as string) || "";
+  const text = ((data.content?.[0]?.text as string) || "").trim();
+
+  if (!text) {
+    const stopReason = data.stop_reason as string | undefined;
+    throw new Error(
+      stopReason === "max_tokens"
+        ? "AI response was truncated (max tokens). Try again."
+        : "AI returned empty response",
+    );
+  }
+
+  if (!jsonPrefill) return text;
+
+  // Prefill sends assistant "{" — model may or may not repeat the brace
+  return text.startsWith("{") ? text : `{${text}`;
+};
+
+/** Extract and parse JSON from an LLM response (markdown fences, trailing text, etc.) */
+export const parseAIJsonResponse = <T = Record<string, unknown>>(
+  raw: string,
+): T => {
+  const text = raw.trim();
+  if (!text) throw new Error("AI returned empty response");
+
+  const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  const candidates = [
+    fenced?.[1]?.trim(),
+    text,
+    extractJsonObject(text),
+  ].filter(Boolean) as string[];
+
+  const repaired = repairTruncatedJson(text);
+  if (repaired) candidates.push(repaired);
+
+  for (const candidate of candidates) {
+    try {
+      return JSON.parse(candidate) as T;
+    } catch {
+      // try next candidate
+    }
+  }
+
+  throw new Error("Could not parse JSON from AI response");
+};
+
+/** Close truncated JSON when the model hits max_tokens mid-object */
+const repairTruncatedJson = (text: string): string | null => {
+  const extracted = extractJsonObject(text);
+  if (!extracted) return null;
+
+  try {
+    JSON.parse(extracted);
+    return extracted;
+  } catch {
+    // fall through to bracket repair
+  }
+
+  let slice = extracted.replace(/,\s*([}\]])/g, "$1");
+  slice = slice.replace(/,\s*"[^"]*"?\s*:?\s*("?[^"]*)?$/, "");
+  slice = slice.replace(/,\s*$/, "");
+
+  const stack: string[] = [];
+  let inString = false;
+  let escaped = false;
+
+  for (const char of slice) {
+    if (inString) {
+      if (escaped) escaped = false;
+      else if (char === "\\") escaped = true;
+      else if (char === '"') inString = false;
+      continue;
+    }
+    if (char === '"') {
+      inString = true;
+      continue;
+    }
+    if (char === "{") stack.push("}");
+    else if (char === "[") stack.push("]");
+    else if (char === "}" || char === "]") stack.pop();
+  }
+
+  while (stack.length) slice += stack.pop();
+
+  try {
+    JSON.parse(slice);
+    return slice;
+  } catch {
+    return null;
+  }
+};
+
+const extractJsonObject = (text: string): string | null => {
+  const start = text.indexOf("{");
+  if (start === -1) return null;
+
+  let depth = 0;
+  let inString = false;
+  let escaped = false;
+
+  for (let i = start; i < text.length; i++) {
+    const char = text[i];
+
+    if (inString) {
+      if (escaped) {
+        escaped = false;
+      } else if (char === "\\") {
+        escaped = true;
+      } else if (char === '"') {
+        inString = false;
+      }
+      continue;
+    }
+
+    if (char === '"') {
+      inString = true;
+      continue;
+    }
+
+    if (char === "{") depth++;
+    if (char === "}") {
+      depth--;
+      if (depth === 0) return text.slice(start, i + 1);
+    }
+  }
+
+  return null;
 };
 
 // ─────────────────────────────────────────────────────────────
@@ -144,8 +276,7 @@ Possible flags: "pain_flag", "low_adherence", "plateau_risk", "overtraining_risk
   });
 
   try {
-    const clean = response.replace(/```json|```/g, "").trim();
-    return JSON.parse(clean) as IMemoryUpdateResult;
+    return parseAIJsonResponse<IMemoryUpdateResult>(response);
   } catch {
     return null;
   }

@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import {
   getAllTrainers as getAllTrainersService,
   getTrainerById,
+  getTrainerByUserId,
   getTrainerFullProfile,
   getTrainerBySpecialty,
   createTrainerService,
@@ -75,6 +76,49 @@ export const getTrainer = async (
 ): Promise<void> => {
   try {
     const trainer = await getTrainerById(req.params.id);
+    if (!trainer) {
+      res.status(404).json({ success: false, message: "Trainer not found" });
+      return;
+    }
+    res.json({ success: true, data: trainer });
+  } catch (err: any) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+// ─────────────────────────────────────────────────────────────
+// GET /trainers/me
+// Logged-in trainer — uses userId from JWT (same response as GET /:id)
+// ─────────────────────────────────────────────────────────────
+
+export const getMyTrainer = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  try {
+    const userId = (req.user as JwtPayloadWithUser).id;
+    const trainer = await getTrainerByUserId(userId);
+    if (!trainer) {
+      res.status(404).json({ success: false, message: "Trainer not found" });
+      return;
+    }
+    res.json({ success: true, data: trainer });
+  } catch (err: any) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+// ─────────────────────────────────────────────────────────────
+// GET /trainers/user/:userId
+// Lookup trainer profile by user account id (same response as GET /:id)
+// ─────────────────────────────────────────────────────────────
+
+export const getTrainerByUser = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  try {
+    const trainer = await getTrainerByUserId(req.params.userId);
     if (!trainer) {
       res.status(404).json({ success: false, message: "Trainer not found" });
       return;

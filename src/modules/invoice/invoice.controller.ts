@@ -174,7 +174,7 @@ export const getMyInvoicesController = async (
 // ─────────────────────────────────────────────────────────────
 // GET /invoices/trainer
 // Trainer sees all their created invoices
-// Query: status?
+// Query: status?, search?, page?, limit?
 // ─────────────────────────────────────────────────────────────
 
 export const getTrainerInvoicesController = async (
@@ -183,7 +183,7 @@ export const getTrainerInvoicesController = async (
 ): Promise<void> => {
   try {
     const userId = (req.user as JwtPayloadWithUser).id;
-    const { status } = req.query;
+    const { status, search, page, limit } = req.query;
 
     const trainer = await TrainerModel.findOne({ userId });
     if (!trainer) {
@@ -193,12 +193,14 @@ export const getTrainerInvoicesController = async (
       return;
     }
 
-    const result = await getTrainerInvoices(
-      (trainer._id as any).toString(),
-      status as string | undefined,
-    );
+    const result = await getTrainerInvoices(trainer.id, {
+      status: status as string | undefined,
+      search: search as string | undefined,
+      page: page ? parseInt(page as string, 10) : 1,
+      limit: limit ? parseInt(limit as string, 10) : 10,
+    });
 
-    res.status(200).json({ success: true, data: result });
+    res.status(200).json({ success: true, ...result });
   } catch (err: any) {
     res.status(500).json({ success: false, message: err.message });
   }

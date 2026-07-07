@@ -3006,6 +3006,123 @@
           "response": []
         }
       ]
+    },
+    {
+      "name": "📱 Device",
+      "item": [
+        {
+          "name": "Get User Devices",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{userToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/devices",
+              "host": ["{{baseUrl}}"],
+              "path": ["devices"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Pair Device",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const r = pm.response.json();",
+                  "if (r.success && r.data && r.data._id) { pm.collectionVariables.set('deviceId', r.data._id); console.log('✅ deviceId:', r.data._id); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{userToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"My Smart Watch\",\n  \"serialNumber\": \"SN123456789\",\n  \"macAddress\": \"00:11:22:33:44:55\",\n  \"deviceType\": \"watch\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/devices/pair",
+              "host": ["{{baseUrl}}"],
+              "path": ["devices", "pair"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Device Status",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{userToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"isConnected\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/devices/{{deviceId}}/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["devices", "{{deviceId}}", "status"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Set Primary Device",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{userToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/devices/{{deviceId}}/primary",
+              "host": ["{{baseUrl}}"],
+              "path": ["devices", "{{deviceId}}", "primary"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Unpair Device",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{userToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/devices/{{deviceId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["devices", "{{deviceId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Sync Device Metrics",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{userToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/devices/{{deviceId}}/metrics",
+              "host": ["{{baseUrl}}"],
+              "path": ["devices", "{{deviceId}}", "metrics"]
+            }
+          },
+          "response": []
+        }
+      ]
     }
   ],
   "variable": [
@@ -3027,6 +3144,7 @@
     { "key": "invoiceId", "value": "" },
     { "key": "subscriptionId", "value": "" },
     { "key": "updateId", "value": "" },
-    { "key": "withdrawalId", "value": "" }
+    { "key": "withdrawalId", "value": "" },
+    { "key": "deviceId", "value": "" }
   ]
 }

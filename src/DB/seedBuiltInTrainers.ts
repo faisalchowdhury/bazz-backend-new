@@ -9,6 +9,7 @@ import {
   BUILT_IN_TRAINER_PASSWORD,
   BUILT_IN_TRAINERS,
 } from "./builtInTrainers.data";
+import { seedStarterExerciseBlockForTrainer } from "./seedBuiltInExerciseBlocks";
 
 export const seedBuiltInTrainers = async () => {
   const hashedPassword = await hashPassword(BUILT_IN_TRAINER_PASSWORD);
@@ -113,6 +114,8 @@ export const seedBuiltInTrainers = async () => {
         { upsert: true, new: true },
       );
     }
+
+    await seedStarterExerciseBlockForTrainer(trainerId);
 
     results.push({
       slug: def.slug,

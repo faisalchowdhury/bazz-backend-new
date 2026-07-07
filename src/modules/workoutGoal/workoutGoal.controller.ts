@@ -6,6 +6,8 @@ import {
   deleteWorkoutService,
   generateAIPlan,
   getTodaysWorkoutService,
+  getTodaysWorkoutOverviewService,
+  getMonthlyProgressionService,
   getUserWorkoutsService,
   getWorkoutByIdService,
   skipSessionService,
@@ -90,7 +92,15 @@ export const generatePlan = async (
       data: workout,
     });
   } catch (err: any) {
-    res.status(500).json({ success: false, message: err.message });
+    const status =
+      err.message === "Invalid workout ID" ||
+      err.message === "Workout not found" ||
+      err.message === "AI plan already generated for this workout" ||
+      err.message.includes("no approved exercise") ||
+      err.message.includes("No subscribed trainer")
+        ? 400
+        : 500;
+    res.status(status).json({ success: false, message: err.message });
   }
 };
 
@@ -247,6 +257,49 @@ export const getTodaysWorkout = async (
     }
 
     res.status(200).json({ success: true, data: workout });
+  } catch (err: any) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+// ─────────────────────────────────────────────────────────────
+// GET /workouts/today/overview
+// ─────────────────────────────────────────────────────────────
+
+export const getTodaysOverview = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  try {
+    const userId = (req.user as JwtPayloadWithUser).id;
+    const overview = await getTodaysWorkoutOverviewService(userId);
+
+    if (!overview) {
+      res
+        .status(404)
+        .json({ success: false, message: "No workout found for today" });
+      return;
+    }
+
+    res.status(200).json({ success: true, data: overview });
+  } catch (err: any) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+// ─────────────────────────────────────────────────────────────
+// GET /workouts/progression/monthly
+// ─────────────────────────────────────────────────────────────
+
+export const getMonthlyProgression = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  try {
+    const userId = (req.user as JwtPayloadWithUser).id;
+    const progression = await getMonthlyProgressionService(userId);
+
+    res.status(200).json({ success: true, data: progression });
   } catch (err: any) {
     res.status(500).json({ success: false, message: err.message });
   }

@@ -1,8 +1,12 @@
-import { Types } from "mongoose";
 import { TrainerRequestModel } from "./trainerRequest.model";
 import { TrainerModel } from "../trainer/trainer.model";
 import { UserModel } from "../user/user.model";
-import { ITrainerRequest } from "./trainerRequest.interface";
+import { InvoiceModel } from "../invoice/invoice.model";
+import paginationBuilder from "../../utils/paginationBuilder";
+import {
+  TRAINER_VIEW_USER_SELECT,
+  formatUserForTrainerView,
+} from "../user/user.serializer";
 
 // ─────────────────────────────────────────────────────────────
 // SEND REQUEST
@@ -89,24 +93,125 @@ export const cancelRequest = async (userId: string, requestId: string) => {
 };
 
 // ─────────────────────────────────────────────────────────────
-// GET INCOMING REQUESTS (trainer sees pending requests)
+// GET TRAINER REQUESTS (shared list logic)
 // ─────────────────────────────────────────────────────────────
+
+const getTrainerRequestsList = async (
+  trainerId: string,
+  filters: {
+    status?: string;
+    search?: string;
+    page?: number;
+    limit?: number;
+  } = {},
+  options: { defaultStatus?: string; fullUserProfile?: boolean } = {},
+) => {
+  const query: Record<string, unknown> = { trainerId };
+
+  if (filters.status) {
+    query.status = filters.status;
+  } else if (options.defaultStatus) {
+    query.status = options.defaultStatus;
+  }
+
+  const search = filters.search?.trim();
+  if (search) {
+    const searchRegex = new RegExp(search, "i");
+    const matchingUsers = await UserModel.find({
+      $or: [
+        { firstName: searchRegex },
+        { lastName: searchRegex },
+        {
+          $expr: {
+            $regexMatch: {
+              input: { $concat: ["$firstName", " ", "$lastName"] },
+              regex: search,
+              options: "i",
+            },
+          },
+        },
+      ],
+    }).select("_id");
+
+    query.userId = { $in: matchingUsers.map((user) => user._id) };
+  }
+
+  const page = filters.page && filters.page > 0 ? filters.page : 1;
+  const limit = filters.limit && filters.limit > 0 ? filters.limit : 10;
+  const skip = (page - 1) * limit;
+
+  const userPopulate = options.fullUserProfile
+    ? { path: "userId", select: TRAINER_VIEW_USER_SELECT }
+    : {
+        path: "userId",
+        select:
+          "firstName lastName email profilePicture primaryGoal fitnessLevel",
+      };
+
+  const [data, totalData] = await Promise.all([
+    TrainerRequestModel.find(query)
+      .populate(userPopulate)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean(),
+    TrainerRequestModel.countDocuments(query),
+  ]);
+
+  const pagination = paginationBuilder({ totalData, currentPage: page, limit });
+
+  return { data, pagination };
+};
 
 export const getIncomingRequests = async (
   trainerId: string,
-  status?: string,
-) => {
-  const query: any = { trainerId };
-  if (status) query.status = status;
-  else query.status = "pending"; // default: show only pending
+  filters: {
+    status?: string;
+    search?: string;
+    page?: number;
+    limit?: number;
+  } = {},
+) => getTrainerRequestsList(trainerId, filters, { defaultStatus: "pending" });
 
-  return await TrainerRequestModel.find(query)
-    .populate(
-      "userId",
-      "firstName lastName email profilePicture primaryGoal fitnessLevel",
-    )
+export const getAllTrainerRequests = async (
+  trainerId: string,
+  filters: {
+    status?: string;
+    search?: string;
+    page?: number;
+    limit?: number;
+  } = {},
+) => {
+  const { data, pagination } = await getTrainerRequestsList(trainerId, filters, {
+    fullUserProfile: true,
+  });
+
+  const requestIds = data.map((request) => request._id);
+  const invoices = await InvoiceModel.find({
+    trainerId,
+    requestId: { $in: requestIds },
+  })
+    .select("requestId status createdAt")
     .sort({ createdAt: -1 })
     .lean();
+
+  const invoiceStatusByRequestId = new Map<string, string>();
+  for (const invoice of invoices) {
+    const requestId = invoice.requestId.toString();
+    if (!invoiceStatusByRequestId.has(requestId)) {
+      invoiceStatusByRequestId.set(requestId, invoice.status);
+    }
+  }
+
+  const enrichedData = data.map((request) => ({
+    ...request,
+    userId: formatUserForTrainerView(
+      request.userId as unknown as Record<string, unknown>,
+    ),
+    invoiceStatus: invoiceStatusByRequestId.get(request._id.toString()) || "",
+  }));
+
+  return { data: enrichedData, pagination };
 };
 
 // ─────────────────────────────────────────────────────────────

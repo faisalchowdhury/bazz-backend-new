@@ -1,0 +1,715 @@
+{
+  "info": {
+    "_postman_id": "c5cc9f90-2992-4728-8076-7e65fc27b3f8",
+    "name": "BloodFIT Meal Plan API",
+    "description": "Postman Collection for testing BloodFIT Meal Plan Generator API endpoints.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "47838073"
+  },
+  "item": [
+    {
+      "name": "Meal API Health",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept-Language",
+            "value": "ko",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/meal/health",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "meal",
+            "health"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Workout API Health",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/workout/health",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "workout",
+            "health"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Calculate Daily Nutrition",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/meal/calculate-daily-nutrition?user_id=user123&blood_type=O+&diet_type=classic&age=25&weight=70&height=175&country=china&food_dislikes=sugar, spicy food&allergies=peanuts, shrimp&main_goal=Lose Weight&desired_weight=60",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "meal",
+            "calculate-daily-nutrition"
+          ],
+          "query": [
+            {
+              "key": "user_id",
+              "value": "user123"
+            },
+            {
+              "key": "blood_type",
+              "value": "O+"
+            },
+            {
+              "key": "diet_type",
+              "value": "classic"
+            },
+            {
+              "key": "age",
+              "value": "25"
+            },
+            {
+              "key": "weight",
+              "value": "70"
+            },
+            {
+              "key": "height",
+              "value": "175"
+            },
+            {
+              "key": "country",
+              "value": "china"
+            },
+            {
+              "key": "food_dislikes",
+              "value": "sugar, spicy food"
+            },
+            {
+              "key": "allergies",
+              "value": "peanuts, shrimp"
+            },
+            {
+              "key": "main_goal",
+              "value": "Lose Weight"
+            },
+            {
+              "key": "desired_weight",
+              "value": "60"
+            }
+          ]
+        }
+      },
+      "response": [
+        {
+          "name": "Calculate Daily Nutrition",
+          "originalRequest": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/meal/calculate-daily-nutrition?user_id=user123&blood_type=O+&diet_type=classic&age=25&weight=70&height=175&country=china&food_dislikes=sugar, spicy food&allergies=peanuts, shrimp&main_goal=Lose Weight&desired_weight=60",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "meal",
+                "calculate-daily-nutrition"
+              ],
+              "query": [
+                {
+                  "key": "user_id",
+                  "value": "user123"
+                },
+                {
+                  "key": "blood_type",
+                  "value": "O+"
+                },
+                {
+                  "key": "diet_type",
+                  "value": "classic"
+                },
+                {
+                  "key": "age",
+                  "value": "25"
+                },
+                {
+                  "key": "weight",
+                  "value": "70"
+                },
+                {
+                  "key": "height",
+                  "value": "175"
+                },
+                {
+                  "key": "country",
+                  "value": "china"
+                },
+                {
+                  "key": "food_dislikes",
+                  "value": "sugar, spicy food"
+                },
+                {
+                  "key": "allergies",
+                  "value": "peanuts, shrimp"
+                },
+                {
+                  "key": "main_goal",
+                  "value": "Lose Weight"
+                },
+                {
+                  "key": "desired_weight",
+                  "value": "60"
+                }
+              ]
+            }
+          },
+          "_postman_previewlanguage": "Text",
+          "header": [],
+          "cookie": [
+            {
+              "expires": "Invalid Date",
+              "domain": "",
+              "path": ""
+            }
+          ],
+          "body": "{\r\n    \"total_daily_calories\": 1800,\r\n    \"total_daily_macronutrients\": {\r\n        \"carbohydrates\": 135.0,\r\n        \"protein\": 180.0,\r\n        \"fat\": 60.0\r\n    },\r\n    \"user_id\": \"user123\",\r\n    \"calculation_timestamp\": \"2026-02-06T15:23:33.239000\",\r\n    \"meal_calorie_distribution\": {\r\n        \"breakfast\": 540,\r\n        \"lunch\": 720,\r\n        \"dinner\": 540\r\n    }\r\n}"
+        }
+      ]
+    },
+    {
+      "name": "Generate Meal Plan",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/meal/generate-meal-plan?user_id=123&blood_type=A+&diet_type=classic&age=26&weight=60&height=165.10&country=china&food_dislikes=sugar, spicy food&allergies=peanuts, shrimp&total_daily_calories=1800&carbs=158&protein=135&fat=60&main_goal=Stay Fit&language=en&generate_images=true",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "meal",
+            "generate-meal-plan"
+          ],
+          "query": [
+            {
+              "key": "user_id",
+              "value": "123"
+            },
+            {
+              "key": "blood_type",
+              "value": "A+"
+            },
+            {
+              "key": "diet_type",
+              "value": "classic"
+            },
+            {
+              "key": "age",
+              "value": "26"
+            },
+            {
+              "key": "weight",
+              "value": "60"
+            },
+            {
+              "key": "height",
+              "value": "165.10"
+            },
+            {
+              "key": "country",
+              "value": "china"
+            },
+            {
+              "key": "food_dislikes",
+              "value": "sugar, spicy food"
+            },
+            {
+              "key": "allergies",
+              "value": "peanuts, shrimp"
+            },
+            {
+              "key": "total_daily_calories",
+              "value": "1800"
+            },
+            {
+              "key": "carbs",
+              "value": "158"
+            },
+            {
+              "key": "protein",
+              "value": "135"
+            },
+            {
+              "key": "fat",
+              "value": "60"
+            },
+            {
+              "key": "main_goal",
+              "value": "Stay Fit"
+            },
+            {
+              "key": "language",
+              "value": "en"
+            },
+            {
+              "key": "generate_images",
+              "value": "true"
+            }
+          ]
+        }
+      },
+      "response": [
+        {
+          "name": "Generate Meal Plan",
+          "originalRequest": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/meal/generate-meal-plan?user_id=123&blood_type=A+&diet_type=vegan&age=26&weight=60&height=165.10&country=china&food_dislikes=sugar, spicy food&allergies=peanuts, shrimp&total_daily_calories=1800&carbs=158&protein=135&fat=60&main_goal=Stay Fit&language=ko&generate_images=false",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "meal",
+                "generate-meal-plan"
+              ],
+              "query": [
+                {
+                  "key": "user_id",
+                  "value": "123"
+                },
+                {
+                  "key": "blood_type",
+                  "value": "A+"
+                },
+                {
+                  "key": "diet_type",
+                  "value": "vegan"
+                },
+                {
+                  "key": "age",
+                  "value": "26"
+                },
+                {
+                  "key": "weight",
+                  "value": "60"
+                },
+                {
+                  "key": "height",
+                  "value": "165.10"
+                },
+                {
+                  "key": "country",
+                  "value": "china"
+                },
+                {
+                  "key": "food_dislikes",
+                  "value": "sugar, spicy food"
+                },
+                {
+                  "key": "allergies",
+                  "value": "peanuts, shrimp"
+                },
+                {
+                  "key": "total_daily_calories",
+                  "value": "1800"
+                },
+                {
+                  "key": "carbs",
+                  "value": "158"
+                },
+                {
+                  "key": "protein",
+                  "value": "135"
+                },
+                {
+                  "key": "fat",
+                  "value": "60"
+                },
+                {
+                  "key": "main_goal",
+                  "value": "Stay Fit"
+                },
+                {
+                  "key": "language",
+                  "value": "ko"
+                },
+                {
+                  "key": "generate_images",
+                  "value": "false"
+                }
+              ]
+            }
+          },
+          "_postman_previewlanguage": "Text",
+          "header": [],
+          "cookie": [
+            {
+              "expires": "Invalid Date",
+              "domain": "",
+              "path": ""
+            }
+          ],
+          "body": "{\r\n    \"breakfast_options\": {\r\n        \"protein_packed\": [\r\n            {\r\n                \"meal_name\": \"아침 단백질 보충\",\r\n                \"category\": \"아침\",\r\n                \"sub_category\": \"추적이 합함\",\r\n                \"total_calories\": 628.0,\r\n                \"macronutrients\": {\r\n                    \"carbohydrates\": 10.0,\r\n                    \"protein\": 45.0,\r\n                    \"fat\": 40.0\r\n                },\r\n                \"description\": \"하루를 단백질이 풍부한 아침 식사로 시작하세요. 육즙이 풍부한 칠면조 고기를 계란과 함께 볶아 만든 이 요리는 근육 생성과 지속적인 에너지 공급에 탁월합니다.\",\r\n                \"ingredients\": [\r\n                    {\r\n                        \"name\": \"터키 가슴살\",\r\n                        \"quantity\": \"150g\",\r\n                        \"icon\": \"🍗\"\r\n                    },\r\n                    {\r\n                        \"name\": \"계란\",\r\n                        \"quantity\": \"3개의 큰\",\r\n                        \"icon\": \"🥚\"\r\n                    },\r\n                    {\r\n                        \"name\": \"올리브유\",\r\n                        \"quantity\": \"1큰술\",\r\n                        \"icon\": \"🫒\"\r\n                    }\r\n                ],\r\n                \"number_of_servings\": 1\r\n            },\r\n            {\r\n                \"meal_name\": \"풍미 가득한 연어 스크램블\",\r\n                \"category\": \"아침\",\r\n                \"sub_category\": \"추적이 합함\",\r\n                \"total_calories\": 633.0,\r\n                \"macronutrients\": {\r\n                    \"carbohydrates\": 12.0,\r\n                    \"protein\": 42.0,\r\n                    \"fat\": 41.0\r\n                },\r\n                \"description\": \"스크램블 에그와 연어를 맛있게 조합하여 단백질과 오메가-3를 풍부하게 섭취하며 활기찬 아침을 시작하세요.\",\r\n                \"ingredients\": [\r\n                    {\r\n                        \"name\": \"연어 필레\",\r\n                        \"quantity\": \"120g\",\r\n                        \"icon\": \"🐟\"\r\n                    },\r\n                    {\r\n                        \"name\": \"계란\",\r\n                        \"quantity\": \"3개의 큰\",\r\n                        \"icon\": \"🥚\"\r\n                    },\r\n                    {\r\n                        \"name\": \"파\",\r\n                        \"quantity\": \"2줄기\",\r\n                        \"icon\": \"🌿\"\r\n                    }\r\n                ],\r\n                \"number_of_servings\": 1\r\n            },\r\n            {\r\n                \"meal_name\": \"치킨 에그 딜라이트\",\r\n                \"category\": \"아침\",\r\n                \"sub_category\": \"추적이 합함\",\r\n                \"total_calories\": 629.0,\r\n                \"macronutrients\": {\r\n                    \"carbohydrates\": 15.0,\r\n                    \"protein\": 44.0,\r\n                    \"fat\": 39.0\r\n                },\r\n                \"description\": \"닭고기와 계란으로 만든 풍미 가득한 아침 식사는 양질의 단백질을 공급하여 포만감과 에너지를 유지시켜 줍니다.\",\r\n                \"ingredients\": [\r\n                    {\r\n                        \"name\": \"닭가슴살\",\r\n                        \"quantity\": \"150g\",\r\n                        \"icon\": \"🍗\"\r\n                    },\r\n                    {\r\n                        \"name\": \"계란\",\r\n                        \"quantity\": \"3개의 큰\",\r\n                        \"icon\": \"🥚\"\r\n                    },\r\n                    {\r\n                        \"name\": \"간장\",\r\n                        \"quantity\": \"1큰술\",\r\n                        \"icon\": \"🥢\"\r\n                    }\r\n                ],\r\n                \"number_of_servings\": 1\r\n            }\r\n        ],\r\n        \"light_fresh\": [\r\n            {\r\n                \"meal_name\": \"상큼한 오이 치킨\",\r\n                \"category\": \"아침\",\r\n                \"sub_category\": \"안녕 산뜻한\",\r\n                \"total_calories\": 632.0,\r\n                \"macronutrients\": {\r\n                    \"carbohydrates\": 18.0,\r\n                    \"protein\": 38.0,\r\n                    \"fat\": 40.0\r\n                },\r\n                \"description\": \"가볍고 신선한 찐 닭고기와 아삭한 오이로 구성된 아침 식사는 상쾌한 하루의 시작을 선사합니다.\",\r\n                \"ingredients\": [\r\n                    {\r\n                        \"name\": \"닭가슴살\",\r\n                        \"quantity\": \"120g\",\r\n                        \"icon\": \"🍗\"\r\n                    },\r\n                    {\r\n                        \"name\": \"오이\",\r\n                        \"quantity\": \"1 중간 크기\",\r\n                        \"icon\": \"🥒\"\r\n                    },\r\n                    {\r\n                        \"name\": \"참기름\",\r\n                        \"quantity\": \"1티스푼\",\r\n                        \"icon\": \"🌿\"\r\n                    }\r\n                ],\r\n                \"number_of_servings\": 1\r\n            },\r\n            {\r\n                \"meal_name\": \"대구와 양배추 샐러드\",\r\n                \"category\": \"아침\",\r\n                \"sub_category\": \"안녕 산뜻한\",\r\n                \"total_calories\": 627.0,\r\n                \"macronutrients\": {\r\n                    \"carbohydrates\": 20.0,\r\n                    \"protein\": 37.0,\r\n                    \"fat\": 39.0\r\n                },\r\n                \"description\": \"대구와 양배추를 넣은 저칼로리 신선한 샐러드는 단백질이 풍부하여 포만감을 주는 가벼운 식사입니다.\",\r\n                \"ingredients\": [\r\n                    {\r\n                        \"name\": \"대구 필레\",\r\n                        \"quantity\": \"120g\",\r\n                        \"icon\": \"🐟\"\r\n                    },\r\n                    {\r\n                        \"name\": \"양배추\",\r\n                        \"quantity\": \"100g\",\r\n                        \"icon\": \"🥬\"\r\n                    },\r\n                    {\r\n                        \"name\": \"레몬 주스\",\r\n                        \"quantity\": \"1큰술\",\r\n                        \"icon\": \"🍋\"\r\n                    }\r\n                ],\r\n                \"number_of_servings\": 1\r\n            },\r\n            {\r\n                \"meal_name\": \"고등어와 풋콩의 환상적인 조합\",\r\n                \"category\": \"아침\",\r\n                \"sub_category\": \"안녕 산뜻한\",\r\n                \"total_calories\": 634.0,\r\n                \"macronutrients\": {\r\n                    \"carbohydrates\": 22.0,\r\n                    \"protein\": 36.0,\r\n                    \"fat\": 41.0\r\n                },\r\n                \"description\": \"고등어와 풋콩을 넣어 만든 신선하고 가벼운 아침 식사로, 영양 가득한 하루를 시작하기에 안성맞춤입니다.\",\r\n                \"ingredients\": [\r\n                    {\r\n                        \"name\": \"고등어 필레\",\r\n                        \"quantity\": \"100g\",\r\n                        \"icon\": \"🐟\"\r\n                    },\r\n                    {\r\n                        \"name\": \"녹색 콩\",\r\n                        \"quantity\": \"100g\",\r\n                        \"icon\": \"🥦\"\r\n                    },\r\n                    {\r\n                        \"name\": \"생강\",\r\n                        \"quantity\": \"1티스푼\",\r\n                        \"icon\": \"🌿\"\r\n                    }\r\n                ],\r\n                \"number_of_servings\": 1\r\n            }\r\n        ],\r\n        \"healthy_comforting\": [\r\n            {\r\n                \"meal_name\": \"속을 따뜻하게 해주는 칠면조 죽\",\r\n                \"category\": \"아침\",\r\n                \"sub_category\": \"건강하고 복부\",\r\n                \"total_calories\": 631.0,\r\n                \"macronutrients\": {\r\n                    \"carbohydrates\": 30.0,\r\n                    \"protein\": 34.0,\r\n                    \"fat\": 38.0\r\n                },\r\n                \"description\": \"따뜻하고 편안한 아침 식사로 제격인 칠면조 죽 한 그릇. 전통적인 맛에 건강을 더했습니다.\",\r\n                \"ingredients\": [\r\n                    {\r\n                        \"name\": \"터키 가슴살\",\r\n                        \"quantity\": \"100g\",\r\n                        \"icon\": \"🍗\"\r\n                    },\r\n                    {\r\n                        \"name\": \"쌀\",\r\n                        \"quantity\": \"50g\",\r\n                        \"icon\": \"🍚\"\r\n                    },\r\n                    {\r\n                        \"name\": \"마늘\",\r\n                        \"quantity\": \"정향 2개\",\r\n                        \"icon\": \"🌿\"\r\n                    }\r\n                ],\r\n                \"number_of_servings\": 1\r\n            },\r\n            {\r\n                \"meal_name\": \"연어와 계란을 곁들인 따뜻한 한 그릇\",\r\n                \"category\": \"아침\",\r\n                \"sub_category\": \"건강하고 복부\",\r\n                \"total_calories\": 630.0,\r\n                \"macronutrients\": {\r\n                    \"carbohydrates\": 28.0,\r\n                    \"protein\": 35.0,\r\n                    \"fat\": 40.0\r\n                },\r\n                \"description\": \"연어와 계란이 들어간 푸짐한 아침 식사 볼은 영양소가 풍부한 균형 잡힌 식사를 제공합니다.\",\r\n                \"ingredients\": [\r\n                    {\r\n                        \"name\": \"연어 필레\",\r\n                        \"quantity\": \"100g\",\r\n                        \"icon\": \"🐟\"\r\n                    },\r\n                    {\r\n                        \"name\": \"계란\",\r\n                        \"quantity\": \"2개의 큰\",\r\n                        \"icon\": \"🥚\"\r\n                    },\r\n                    {\r\n                        \"name\": \"시금치\",\r\n                        \"quantity\": \"50g\",\r\n                        \"icon\": \"🥬\"\r\n                    }\r\n                ],\r\n                \"number_of_servings\": 1\r\n            },\r\n            {\r\n                \"meal_name\": \"송어와 두부 수프\",\r\n                \"category\": \"아침\",\r\n                \"sub_category\": \"건강하고 복부\",\r\n                \"total_calories\": 629.0,\r\n                \"macronutrients\": {\r\n                    \"carbohydrates\": 32.0,\r\n                    \"protein\": 33.0,\r\n                    \"fat\": 37.0\r\n                },\r\n                \"description\": \"따뜻하고 속 편한 송어 두부탕은 풍부한 맛과 영양으로 하루를 균형 있게 시작하기에 안성맞춤입니다.\",\r\n                \"ingredients\": [\r\n                    {\r\n                        \"name\": \"송어 필레\",\r\n                        \"quantity\": \"100g\",\r\n                        \"icon\": \"🐟\"\r\n                    },\r\n                    {\r\n                        \"name\": \"두부\",\r\n                        \"quantity\": \"50g\",\r\n                        \"icon\": \"🍲\"\r\n                    },\r\n                    {\r\n                        \"name\": \"생강\",\r\n                        \"quantity\": \"1티스푼\",\r\n                        \"icon\": \"🌿\"\r\n                    }\r\n                ],\r\n                \"number_of_servings\": 1\r\n            }\r\n        ]\r\n    },\r\n    \"lunch_options\": {\r\n        \"protein_packed\": [\r\n            {\r\n                \"meal_name\": \"치킨 파워 볶음\",\r\n                \"category\": \"점심\",\r\n                \"sub_category\": \"추적이 합함\",\r\n                \"total_calories\": 722.0,\r\n                \"macronutrients\": {\r\n                    \"carbohydrates\": 30.0,\r\n                    \"protein\": 50.0,\r\n                    \"fat\": 45.0\r\n                },\r\n                \"description\": \"단백질과 필수 영양소가 풍부한 푸짐한 닭고기 볶음 요리로, 활력을 주는 점심 식사로 제격입니다.\",\r\n                \"ingredients\": [\r\n                    {\r\n                        \"name\": \"닭가슴살\",\r\n                        \"quantity\": \"200g\",\r\n                        \"icon\": \"🍗\"\r\n                    },\r\n                    {\r\n                        \"name\": \"브로콜리\",\r\n                        \"quantity\": \"100g\",\r\n                        \"icon\": \"🥦\"\r\n                    },\r\n                    {\r\n                        \"name\": \"간장\",\r\n                        \"quantity\": \"1큰술\",\r\n                        \"icon\": \"🥢\"\r\n                    }\r\n                ],\r\n                \"number_of_servings\": 1\r\n            },\r\n            {\r\n                \"meal_name\": \"연어 스트렝스 볼\",\r\n                \"category\": \"점심\",\r\n                \"sub_category\": \"추적이 합함\",\r\n                \"total_calories\": 718.0,\r\n                \"macronutrients\": {\r\n                    \"carbohydrates\": 35.0,\r\n                    \"protein\": 52.0,\r\n                    \"fat\": 40.0\r\n                },\r\n                \"description\": \"연어 한 그릇에 신선한 잎채소를 곁들여 단백질이 풍부한 식사를 즐기며 오후 시간을 활기차게 보내세요.\",\r\n                \"ingredients\": [\r\n                    {\r\n                        \"name\": \"연어 필레\",\r\n                        \"quantity\": \"200g\",\r\n                        \"icon\": \"🐟\"\r\n                    },\r\n                    {\r\n                        \"name\": \"케일\",\r\n                        \"quantity\": \"100g\",\r\n                        \"icon\": \"🥬\"\r\n                    },\r\n                    {\r\n                        \"name\": \"레몬 주스\",\r\n                        \"quantity\": \"1큰술\",\r\n                        \"icon\": \"🍋\"\r\n                    }\r\n                ],\r\n                \"number_of_servings\": 1\r\n            },\r\n            {\r\n                \"meal_name\": \"칠면조 단백질 만찬\",\r\n                \"category\": \"점심\",\r\n                \"sub_category\": \"추적이 합함\",\r\n                \"total_calories\": 721.0,\r\n                \"macronutrients\": {\r\n                    \"carbohydrates\": 28.0,\r\n                    \"protein\": 54.0,\r\n                    \"fat\": 42.0\r\n                },\r\n                \"description\": \"칠면조 고기와 다양한 채소가 듬뿍 들어간 이 요리는 풍부한 단백질과 영양소를 제공합니다.\",\r\n                \"ingredients\": [\r\n                    {\r\n                        \"name\": \"터키 가슴살\",\r\n                        \"quantity\": \"200g\",\r\n                        \"icon\": \"🍗\"\r\n                    },\r\n                    {\r\n                        \"name\": \"피망\",\r\n                        \"quantity\": \"100g\",\r\n                        \"icon\": \"🌶️\"\r\n                    },\r\n                    {\r\n                        \"name\": \"올리브유\",\r\n                        \"quantity\": \"1큰술\",\r\n                        \"icon\": \"🫒\"\r\n                    }\r\n                ],\r\n                \"number_of_servings\": 1\r\n            }\r\n        ],\r\n        \"light_fresh\": [\r\n            {\r\n                \"meal_name\": \"가벼운 농어 샐러드\",\r\n                \"category\": \"점심\",\r\n                \"sub_category\": \"안녕 산뜻한\",\r\n                \"total_calories\": 719.0,\r\n                \"macronutrients\": {\r\n                    \"carbohydrates\": 40.0,\r\n                    \"protein\": 45.0,\r\n                    \"fat\": 35.0\r\n                },\r\n                \"description\": \"신선한 농어 샐러드에 각종 채소를 곁들여 가볍지만 만족스러운 식사를 즐겨보세요.\",\r\n                \"ingredients\": [\r\n                    {\r\n                        \"name\": \"농어 필레\",\r\n                        \"quantity\": \"150g\",\r\n                        \"icon\": \"🐟\"\r\n                    },\r\n                    {\r\n                        \"name\": \"믹스 그린\",\r\n                        \"quantity\": \"100g\",\r\n                        \"icon\": \"🥗\"\r\n                    },\r\n                    {\r\n                        \"name\": \"올리브유\",\r\n                        \"quantity\": \"1큰술\",\r\n                        \"icon\": \"🫒\"\r\n                    }\r\n                ],\r\n                \"number_of_servings\": 1\r\n            },\r\n            {\r\n                \"meal_name\": \"대구와 시금치 랩\",\r\n                \"category\": \"점심\",\r\n                \"sub_category\": \"안녕 산뜻한\",\r\n                \"total_calories\": 720.0,\r\n                \"macronutrients\": {\r\n                    \"carbohydrates\": 42.0,\r\n                    \"protein\": 43.0,\r\n                    \"fat\": 37.0\r\n                },\r\n                \"description\": \"대구와 시금치를 넣은 랩은 영양소가 풍부하면서도 상큼하고 가벼운 점심 식사로 제격입니다.\",\r\n                \"ingredients\": [\r\n                    {\r\n                        \"name\": \"대구 필레\",\r\n                        \"quantity\": \"150g\",\r\n                        \"icon\": \"🐟\"\r\n                    },\r\n                    {\r\n                        \"name\": \"시금치\",\r\n                        \"quantity\": \"100g\",\r\n                        \"icon\": \"🥬\"\r\n                    },\r\n                    {\r\n                        \"name\": \"통밀 랩\",\r\n                        \"quantity\": \"1 대형\",\r\n                        \"icon\": \"🌯\"\r\n                    }\r\n                ],\r\n                \"number_of_servings\": 1\r\n            },\r\n            {\r\n                \"meal_name\": \"고등어와 오이의 환상적인 조합\",\r\n                \"category\": \"점심\",\r\n                \"sub_category\": \"안녕 산뜻한\",\r\n                \"total_calories\": 722.0,\r\n                \"macronutrients\": {\r\n                    \"carbohydrates\": 38.0,\r\n                    \"protein\": 46.0,\r\n                    \"fat\": 36.0\r\n                },\r\n                \"description\": \"신선한 고등어와 오이를 사용한 가볍고 상큼하면서도 풍미 가득한 요리입니다.\",\r\n                \"ingredients\": [\r\n                    {\r\n                        \"name\": \"고등어 필레\",\r\n                        \"quantity\": \"150g\",\r\n                        \"icon\": \"🐟\"\r\n                    },\r\n                    {\r\n                        \"name\": \"오이\",\r\n                        \"quantity\": \"1 중간 크기\",\r\n                        \"icon\": \"🥒\"\r\n                    },\r\n                    {\r\n                        \"name\": \"간장\",\r\n                        \"quantity\": \"1큰술\",\r\n                        \"icon\": \"🥢\"\r\n                    }\r\n                ],\r\n                \"number_of_servings\": 1\r\n            }\r\n        ],\r\n        \"healthy_comforting\": [\r\n            {\r\n                \"meal_name\": \"속을 편안하게 해주는 송어 수프\",\r\n                \"category\": \"점심\",\r\n                \"sub_category\": \"건강하고 복부\",\r\n                \"total_calories\": 718.0,\r\n                \"macronutrients\": {\r\n                    \"carbohydrates\": 45.0,\r\n                    \"protein\": 42.0,\r\n                    \"fat\": 34.0\r\n                },\r\n                \"description\": \"따뜻하고 풍미 가득한 송어 수프 한 그릇은 균형 잡힌 영양과 편안한 맛을 선사합니다.\",\r\n                \"ingredients\": [\r\n                    {\r\n                        \"name\": \"송어 필레\",\r\n                        \"quantity\": \"150g\",\r\n                        \"icon\": \"🐟\"\r\n                    },\r\n                    {\r\n                        \"name\": \"붉은 머리털\",\r\n                        \"quantity\": \"100g\",\r\n                        \"icon\": \"🥕\"\r\n                    },\r\n                    {\r\n                        \"name\": \"생강\",\r\n                        \"quantity\": \"1티스푼\",\r\n                        \"icon\": \"🌿\"\r\n                    }\r\n                ],\r\n                \"number_of_servings\": 1\r\n            },\r\n            {\r\n                \"meal_name\": \"연어와 야채 볶음\",\r\n                \"category\": \"점심\",\r\n                \"sub_category\": \"건강하고 복부\",\r\n                \"total_calories\": 722.0,\r\n                \"macronutrients\": {\r\n                    \"carbohydrates\": 43.0,\r\n                    \"protein\": 44.0,\r\n                    \"fat\": 35.0\r\n                },\r\n                \"description\": \"연어와 다양한 채소를 넣어 만든 푸짐하고 균형 잡힌 볶음 요리입니다.\",\r\n                \"ingredients\": [\r\n                    {\r\n                        \"name\": \"연어 필레\",\r\n                        \"quantity\": \"150g\",\r\n                        \"icon\": \"🐟\"\r\n                    },\r\n                    {\r\n                        \"name\": \"피망\",\r\n                        \"quantity\": \"100g\",\r\n                        \"icon\": \"🌶️\"\r\n                    },\r\n                    {\r\n                        \"name\": \"간장\",\r\n                        \"quantity\": \"1큰술\",\r\n                        \"icon\": \"🥢\"\r\n                    }\r\n                ],\r\n                \"number_of_servings\": 1\r\n            },\r\n            {\r\n                \"meal_name\": \"터키 & 밥으로 만든 따뜻한 한 그릇\",\r\n                \"category\": \"점심\",\r\n                \"sub_category\": \"건강하고 복부\",\r\n                \"total_calories\": 720.0,\r\n                \"macronutrients\": {\r\n                    \"carbohydrates\": 44.0,\r\n                    \"protein\": 43.0,\r\n                    \"fat\": 34.0\r\n                },\r\n                \"description\": \"든든한 칠면조와 밥 한 그릇은 편안함과 균형 잡힌 영양소를 제공합니다.\",\r\n                \"ingredients\": [\r\n                    {\r\n                        \"name\": \"터키 가슴살\",\r\n                        \"quantity\": \"150g\",\r\n                        \"icon\": \"🍗\"\r\n                    },\r\n                    {\r\n                        \"name\": \"쌀\",\r\n                        \"quantity\": \"100g\",\r\n                        \"icon\": \"🍚\"\r\n                    },\r\n                    {\r\n                        \"name\": \"마늘\",\r\n                        \"quantity\": \"정향 2개\",\r\n                        \"icon\": \"🌿\"\r\n                    }\r\n                ],\r\n                \"number_of_servings\": 1\r\n            }\r\n        ]\r\n    },\r\n    \"dinner_options\": {\r\n        \"protein_packed\": [\r\n            {\r\n                \"meal_name\": \"저녁 단백질 플레이트\",\r\n                \"category\": \"저녁\",\r\n                \"sub_category\": \"추적이 합함\",\r\n                \"total_calories\": 452.0,\r\n                \"macronutrients\": {\r\n                    \"carbohydrates\": 18.0,\r\n                    \"protein\": 35.0,\r\n                    \"fat\": 30.0\r\n                },\r\n                \"description\": \"간단하면서도 만족스러운 칠면조와 채소 저녁 식사는 근육 회복에 필요한 고단백질을 제공합니다.\",\r\n                \"ingredients\": [\r\n                    {\r\n                        \"name\": \"터키 가슴살\",\r\n                        \"quantity\": \"100g\",\r\n                        \"icon\": \"🍗\"\r\n                    },\r\n                    {\r\n                        \"name\": \"아스파라거스\",\r\n                        \"quantity\": \"100g\",\r\n                        \"icon\": \"🌿\"\r\n                    },\r\n                    {\r\n                        \"name\": \"올리브유\",\r\n                        \"quantity\": \"1티스푼\",\r\n                        \"icon\": \"🫒\"\r\n                    }\r\n                ],\r\n                \"number_of_servings\": 1\r\n            },\r\n            {\r\n                \"meal_name\": \"연어 단백질 보충\",\r\n                \"category\": \"저녁\",\r\n                \"sub_category\": \"추적이 합함\",\r\n                \"total_calories\": 449.0,\r\n                \"macronutrients\": {\r\n                    \"carbohydrates\": 16.0,\r\n                    \"protein\": 36.0,\r\n                    \"fat\": 29.0\r\n                },\r\n                \"description\": \"단백질이 풍부한 저녁 식사로 구운 연어와 채소를 곁들여 근육 성장과 회복을 돕습니다.\",\r\n                \"ingredients\": [\r\n                    {\r\n                        \"name\": \"연어 필레\",\r\n                        \"quantity\": \"100g\",\r\n                        \"icon\": \"🐟\"\r\n                    },\r\n                    {\r\n                        \"name\": \"서양 호박\",\r\n                        \"quantity\": \"100g\",\r\n                        \"icon\": \"🥒\"\r\n                    },\r\n                    {\r\n                        \"name\": \"레몬\",\r\n                        \"quantity\": \"1 웨지\",\r\n                        \"icon\": \"🍋\"\r\n                    }\r\n                ],\r\n                \"number_of_servings\": 1\r\n            },\r\n            {\r\n                \"meal_name\": \"고등어 단백질 펀치\",\r\n                \"category\": \"저녁\",\r\n                \"sub_category\": \"추적이 합함\",\r\n                \"total_calories\": 451.0,\r\n                \"macronutrients\": {\r\n                    \"carbohydrates\": 15.0,\r\n                    \"protein\": 37.0,\r\n                    \"fat\": 30.0\r\n                },\r\n                \"description\": \"단백질이 풍부하고 필수 영양소와 진한 풍미를 제공하는 고등어로 맛있는 저녁 식사를 즐겨보세요.\",\r\n                \"ingredients\": [\r\n                    {\r\n                        \"name\": \"고등어 필레\",\r\n                        \"quantity\": \"100g\",\r\n                        \"icon\": \"🐟\"\r\n                    },\r\n                    {\r\n                        \"name\": \"체리 토마토\",\r\n                        \"quantity\": \"50g\",\r\n                        \"icon\": \"🍅\"\r\n                    },\r\n                    {\r\n                        \"name\": \"바질\",\r\n                        \"quantity\": \"1티스푼\",\r\n                        \"icon\": \"🌿\"\r\n                    }\r\n                ],\r\n                \"number_of_servings\": 1\r\n            }\r\n        ],\r\n        \"light_fresh\": [\r\n            {\r\n                \"meal_name\": \"가벼운 대구 샐러드\",\r\n                \"category\": \"저녁\",\r\n                \"sub_category\": \"안녕 산뜻한\",\r\n                \"total_calories\": 448.0,\r\n                \"macronutrients\": {\r\n                    \"carbohydrates\": 20.0,\r\n                    \"protein\": 34.0,\r\n                    \"fat\": 28.0\r\n                },\r\n                \"description\": \"대구와 신선한 채소를 넣어 만든 가볍고 상큼한 샐러드로, 저칼로리 저녁 식사로 제격입니다.\",\r\n                \"ingredients\": [\r\n                    {\r\n                        \"name\": \"대구 필레\",\r\n                        \"quantity\": \"100g\",\r\n                        \"icon\": \"🐟\"\r\n                    },\r\n                    {\r\n                        \"name\": \"믹스 샐러드 채소\",\r\n                        \"quantity\": \"100g\",\r\n                        \"icon\": \"🥗\"\r\n                    },\r\n                    {\r\n                        \"name\": \"레몬 주스\",\r\n                        \"quantity\": \"1큰술\",\r\n                        \"icon\": \"🍋\"\r\n                    }\r\n                ],\r\n                \"number_of_servings\": 1\r\n            },\r\n            {\r\n                \"meal_name\": \"신선한 송어와 채소\",\r\n                \"category\": \"저녁\",\r\n                \"sub_category\": \"안녕 산뜻한\",\r\n                \"total_calories\": 450.0,\r\n                \"macronutrients\": {\r\n                    \"carbohydrates\": 19.0,\r\n                    \"protein\": 35.0,\r\n                    \"fat\": 28.0\r\n                },\r\n                \"description\": \"송어와 제철 채소를 곁들인 신선하고 가벼운 저녁 식사로, 상쾌한 한 끼를 선사합니다.\",\r\n                \"ingredients\": [\r\n                    {\r\n                        \"name\": \"송어 필레\",\r\n                        \"quantity\": \"100g\",\r\n                        \"icon\": \"🐟\"\r\n                    },\r\n                    {\r\n                        \"name\": \"녹색 콩\",\r\n                        \"quantity\": \"100g\",\r\n                        \"icon\": \"🥦\"\r\n                    },\r\n                    {\r\n                        \"name\": \"올리브유\",\r\n                        \"quantity\": \"1티스푼\",\r\n                        \"icon\": \"🫒\"\r\n                    }\r\n                ],\r\n                \"number_of_servings\": 1\r\n            },\r\n            {\r\n                \"meal_name\": \"오이와 농어의 환상적인 조합\",\r\n                \"category\": \"저녁\",\r\n                \"sub_category\": \"안녕 산뜻한\",\r\n                \"total_calories\": 449.0,\r\n                \"macronutrients\": {\r\n                    \"carbohydrates\": 18.0,\r\n                    \"protein\": 34.0,\r\n                    \"fat\": 29.0\r\n                },\r\n                \"description\": \"농어와 오이를 곁들인 가볍고 상큼한 저녁 식사로, 칼로리는 낮지만 만족스러운 한 끼를 즐길 수 있습니다.\",\r\n                \"ingredients\": [\r\n                    {\r\n                        \"name\": \"농어 필레\",\r\n                        \"quantity\": \"100g\",\r\n                        \"icon\": \"🐟\"\r\n                    },\r\n                    {\r\n                        \"name\": \"오이\",\r\n                        \"quantity\": \"1 중간 크기\",\r\n                        \"icon\": \"🥒\"\r\n                    },\r\n                    {\r\n                        \"name\": \"딜\",\r\n                        \"quantity\": \"1티스푼\",\r\n                        \"icon\": \"🌿\"\r\n                    }\r\n                ],\r\n                \"number_of_servings\": 1\r\n            }\r\n        ],\r\n        \"healthy_comforting\": [\r\n            {\r\n                \"meal_name\": \"따뜻한 닭고기 육수\",\r\n                \"category\": \"저녁\",\r\n                \"sub_category\": \"건강하고 복부\",\r\n                \"total_calories\": 452.0,\r\n                \"macronutrients\": {\r\n                    \"carbohydrates\": 22.0,\r\n                    \"protein\": 33.0,\r\n                    \"fat\": 27.0\r\n                },\r\n                \"description\": \"다양한 채소가 들어간 닭고기 육수는 따뜻함과 균형 잡힌 영양을 제공합니다.\",\r\n                \"ingredients\": [\r\n                    {\r\n                        \"name\": \"닭가슴살\",\r\n                        \"quantity\": \"100g\",\r\n                        \"icon\": \"🍗\"\r\n                    },\r\n                    {\r\n                        \"name\": \"붉은 머리털\",\r\n                        \"quantity\": \"50g\",\r\n                        \"icon\": \"🥕\"\r\n                    },\r\n                    {\r\n                        \"name\": \"셀러리\",\r\n                        \"quantity\": \"50g\",\r\n                        \"icon\": \"🥬\"\r\n                    }\r\n                ],\r\n                \"number_of_servings\": 1\r\n            },\r\n            {\r\n                \"meal_name\": \"연어와 밥으로 즐기는 편안한 한 끼\",\r\n                \"category\": \"저녁\",\r\n                \"sub_category\": \"건강하고 복부\",\r\n                \"total_calories\": 451.0,\r\n                \"macronutrients\": {\r\n                    \"carbohydrates\": 21.0,\r\n                    \"protein\": 34.0,\r\n                    \"fat\": 28.0\r\n                },\r\n                \"description\": \"맛과 영양소가 균형 있게 어우러진, 마음을 편안하게 해주는 연어와 밥 한 접시.\",\r\n                \"ingredients\": [\r\n                    {\r\n                        \"name\": \"연어 필레\",\r\n                        \"quantity\": \"100g\",\r\n                        \"icon\": \"🐟\"\r\n                    },\r\n                    {\r\n                        \"name\": \"쌀\",\r\n                        \"quantity\": \"50g\",\r\n                        \"icon\": \"🍚\"\r\n                    },\r\n                    {\r\n                        \"name\": \"마늘\",\r\n                        \"quantity\": \"정향 2개\",\r\n                        \"icon\": \"🌿\"\r\n                    }\r\n                ],\r\n                \"number_of_servings\": 1\r\n            },\r\n            {\r\n                \"meal_name\": \"송어와 야채 스튜\",\r\n                \"category\": \"저녁\",\r\n                \"sub_category\": \"건강하고 복부\",\r\n                \"total_calories\": 449.0,\r\n                \"macronutrients\": {\r\n                    \"carbohydrates\": 20.0,\r\n                    \"protein\": 32.0,\r\n                    \"fat\": 29.0\r\n                },\r\n                \"description\": \"푸짐한 송어와 야채 스튜는 든든하고 영양가 있는 저녁 식사로 제격입니다.\",\r\n                \"ingredients\": [\r\n                    {\r\n                        \"name\": \"송어 필레\",\r\n                        \"quantity\": \"100g\",\r\n                        \"icon\": \"🐟\"\r\n                    },\r\n                    {\r\n                        \"name\": \"감자\",\r\n                        \"quantity\": \"50g\",\r\n                        \"icon\": \"🥔\"\r\n                    },\r\n                    {\r\n                        \"name\": \"양파\",\r\n                        \"quantity\": \"1 작은\",\r\n                        \"icon\": \"🧅\"\r\n                    }\r\n                ],\r\n                \"number_of_servings\": 1\r\n            }\r\n        ]\r\n    },\r\n    \"user_id\": \"123\",\r\n    \"blood_type\": \"A\",\r\n    \"diet_type\": \"carnivore\",\r\n    \"total_daily_calories\": 1800,\r\n    \"total_daily_macronutrients\": {\r\n        \"carbohydrates\": 158.0,\r\n        \"protein\": 135.0,\r\n        \"fat\": 60.0\r\n    },\r\n    \"breakfast_image\": null,\r\n    \"lunch_image\": null,\r\n    \"dinner_image\": null,\r\n    \"meal_calorie_distribution\": {\r\n        \"breakfast\": 630,\r\n        \"lunch\": 720,\r\n        \"dinner\": 450\r\n    }\r\n}"
+        }
+      ]
+    },
+    {
+      "name": "Generate Meal Image",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"meal_name\": \"아보카도 토스트와 수란\",\r\n  \"description\": \"크리미한 아보카도와 단백질이 풍부한 달걀을 통밀 토스트 위에 올린 영양 가득한 아침 식사\",\r\n  \"ingredients\": [\r\n    { \"name\": \"통밀빵\" },\r\n    { \"name\": \"아보카도\" },\r\n    { \"name\": \"달걀\" },\r\n    { \"name\": \"레몬즙\" }\r\n  ]\r\n}\r\n",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/meal/generate-meal-images",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "meal",
+            "generate-meal-images"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Scan Food",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "image",
+              "type": "file",
+              "uuid": "4b87ae4c-d9cc-4951-8e10-48d572fc5235",
+              "src": "/C:/Users/chowd/Downloads/images (4).jpg"
+            },
+            {
+              "key": "",
+              "value": "",
+              "type": "text",
+              "uuid": "53c64bc5-7e78-4f1a-8f43-762b68a6bffe"
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{base_url}}/meal/scan-food?user_id=123&blood_type=A&diet_type=vegan&country=Korea&allergies=peanuts, shrimp&food_dislikes=spicy food, milk&language=en",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "meal",
+            "scan-food"
+          ],
+          "query": [
+            {
+              "key": "user_id",
+              "value": "123"
+            },
+            {
+              "key": "blood_type",
+              "value": "A"
+            },
+            {
+              "key": "diet_type",
+              "value": "vegan"
+            },
+            {
+              "key": "country",
+              "value": "Korea"
+            },
+            {
+              "key": "allergies",
+              "value": "peanuts, shrimp"
+            },
+            {
+              "key": "food_dislikes",
+              "value": "spicy food, milk"
+            },
+            {
+              "key": "language",
+              "value": "en"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Swap Meal",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/meal/swap-meal?user_id=123&blood_type=O&diet_type=pescatarian&category=lunch&sub_category=protein_packed&current_calories=600&country=China&food_dislikes=spicy food, milk&allergies=peanuts, shrimp&language=en&generate_images=true",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "meal",
+            "swap-meal"
+          ],
+          "query": [
+            {
+              "key": "user_id",
+              "value": "123"
+            },
+            {
+              "key": "blood_type",
+              "value": "O"
+            },
+            {
+              "key": "diet_type",
+              "value": "pescatarian"
+            },
+            {
+              "key": "category",
+              "value": "lunch"
+            },
+            {
+              "key": "sub_category",
+              "value": "protein_packed"
+            },
+            {
+              "key": "current_calories",
+              "value": "600"
+            },
+            {
+              "key": "country",
+              "value": "China"
+            },
+            {
+              "key": "food_dislikes",
+              "value": "spicy food, milk"
+            },
+            {
+              "key": "allergies",
+              "value": "peanuts, shrimp"
+            },
+            {
+              "key": "language",
+              "value": "en"
+            },
+            {
+              "key": "generate_images",
+              "value": "true"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Workout Plan",
+      "protocolProfileBehavior": {
+        "disableBodyPruning": true
+      },
+      "request": {
+        "method": "GET",
+        "header": [],
+        "body": {
+          "mode": "formdata",
+          "formdata": []
+        },
+        "url": {
+          "raw": "{{base_url}}/workout/weekly_workout_plan_ui?user_id=test_user&blood_type=A&age=26&weight=67&height=168&body_shape=Medium&activity_level=Sedentary&workout_level=Break A Light Sweat&main_goal=Lose Weight&desired_weight=60&focus_areas=Upper Body&language=en",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "workout",
+            "weekly_workout_plan_ui"
+          ],
+          "query": [
+            {
+              "key": "user_id",
+              "value": "test_user"
+            },
+            {
+              "key": "blood_type",
+              "value": "A"
+            },
+            {
+              "key": "age",
+              "value": "26"
+            },
+            {
+              "key": "weight",
+              "value": "67"
+            },
+            {
+              "key": "height",
+              "value": "168"
+            },
+            {
+              "key": "body_shape",
+              "value": "Medium"
+            },
+            {
+              "key": "activity_level",
+              "value": "Sedentary"
+            },
+            {
+              "key": "workout_level",
+              "value": "Break A Light Sweat"
+            },
+            {
+              "key": "main_goal",
+              "value": "Lose Weight"
+            },
+            {
+              "key": "desired_weight",
+              "value": "60"
+            },
+            {
+              "key": "focus_areas",
+              "value": "Upper Body"
+            },
+            {
+              "key": "generate_videos",
+              "value": "true",
+              "disabled": true
+            },
+            {
+              "key": "language",
+              "value": "en"
+            }
+          ]
+        }
+      },
+      "response": [
+        {
+          "name": "Workout Plan",
+          "originalRequest": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/workout/weekly_workout_plan_ui?user_id=test_user&blood_type=A&age=26&weight=67&height=168&body_shape=Medium&activity_level=Sedentary&workout_level=Break A Light Sweat&main_goal=Lose Weight&desired_weight=60&focus_areas=Upper Body&generate_videos=false&language=ko",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "workout",
+                "weekly_workout_plan_ui"
+              ],
+              "query": [
+                {
+                  "key": "user_id",
+                  "value": "test_user"
+                },
+                {
+                  "key": "blood_type",
+                  "value": "A"
+                },
+                {
+                  "key": "age",
+                  "value": "26"
+                },
+                {
+                  "key": "weight",
+                  "value": "67"
+                },
+                {
+                  "key": "height",
+                  "value": "168"
+                },
+                {
+                  "key": "body_shape",
+                  "value": "Medium"
+                },
+                {
+                  "key": "activity_level",
+                  "value": "Sedentary"
+                },
+                {
+                  "key": "workout_level",
+                  "value": "Break A Light Sweat"
+                },
+                {
+                  "key": "main_goal",
+                  "value": "Lose Weight"
+                },
+                {
+                  "key": "desired_weight",
+                  "value": "60"
+                },
+                {
+                  "key": "focus_areas",
+                  "value": "Upper Body"
+                },
+                {
+                  "key": "generate_videos",
+                  "value": "false"
+                },
+                {
+                  "key": "language",
+                  "value": "ko"
+                }
+              ]
+            }
+          },
+          "_postman_previewlanguage": "Text",
+          "header": [],
+          "cookie": [
+            {
+              "expires": "Invalid Date",
+              "domain": "",
+              "path": ""
+            }
+          ],
+          "body": "{\r\n    \"user_id\": \"test_user\",\r\n    \"blood_type\": \"A\",\r\n    \"age\": 26,\r\n    \"bmi\": 23.7,\r\n    \"bmi_category\": \"정상\",\r\n    \"body_shape\": \"중간\",\r\n    \"activity_level\": \"앉아 있는\",\r\n    \"main_goal\": \"체중 감량\",\r\n    \"workout_level\": \"가볍게 땀을 흘리다\",\r\n    \"focus_areas\": [\r\n        \"상체\"\r\n    ],\r\n    \"plan_summary\": {\r\n        \"total_workouts\": 7,\r\n        \"total_calories_per_week\": 1720,\r\n        \"average_duration\": \"37 민\",\r\n        \"intensity_distribution\": {\r\n            \"high\": 0,\r\n            \"medium\": 3,\r\n            \"low\": 4\r\n        }\r\n    },\r\n    \"weekly_workouts\": [\r\n        {\r\n            \"day\": \"월요일\",\r\n            \"title\": \"체력 및 유산소 운동\",\r\n            \"duration\": \"40 민\",\r\n            \"intensity\": \"중간\",\r\n            \"total_calories\": \"350 칼로리\",\r\n            \"category\": \"근력 운동 (가벼운 무게부터 중간 무게까지 + 맨몸 운동)\",\r\n            \"warmup_exercises\": [\r\n                {\r\n                    \"name\": \"빠른 걸음\",\r\n                    \"duration\": \"10 민\",\r\n                    \"sets\": \"1 세트\",\r\n                    \"calories\": \"5 0\",\r\n                    \"video_url\": null,\r\n                    \"video_status\": \"보류 중\"\r\n                },\r\n                {\r\n                    \"name\": \"동적 스트레칭\",\r\n                    \"duration\": \"5 민\",\r\n                    \"sets\": \"1 세트\",\r\n                    \"calories\": \"3 0\",\r\n                    \"video_url\": null,\r\n                    \"video_status\": \"보류 중\"\r\n                }\r\n            ],\r\n            \"main_exercises\": [\r\n                {\r\n                    \"name\": \"푸시업\",\r\n                    \"duration\": \"5 민\",\r\n                    \"sets\": \"3 세트\",\r\n                    \"calories\": \"8 0\",\r\n                    \"video_url\": null,\r\n                    \"video_status\": \"보류 중\"\r\n                },\r\n                {\r\n                    \"name\": \"오버헤드 프레스\",\r\n                    \"duration\": \"5 민\",\r\n                    \"sets\": \"3 세트\",\r\n                    \"calories\": \"7 0\",\r\n                    \"video_url\": null,\r\n                    \"video_status\": \"보류 중\"\r\n                },\r\n                {\r\n                    \"name\": \"이두근 컬\",\r\n                    \"duration\": \"5 민\",\r\n                    \"sets\": \"3 세트\",\r\n                    \"calories\": \"7 0\",\r\n                    \"video_url\": null,\r\n                    \"video_status\": \"보류 중\"\r\n                }\r\n            ],\r\n            \"cooldown_exercises\": [\r\n                {\r\n                    \"name\": \"스트레칭\",\r\n                    \"duration\": \"5 민\",\r\n                    \"sets\": \"1 세트\",\r\n                    \"calories\": \"2 0\",\r\n                    \"video_url\": null,\r\n                    \"video_status\": \"보류 중\"\r\n                },\r\n                {\r\n                    \"name\": \"폼롤링\",\r\n                    \"duration\": \"5 민\",\r\n                    \"sets\": \"1 세트\",\r\n                    \"calories\": \"3 0\",\r\n                    \"video_url\": null,\r\n                    \"video_status\": \"보류 중\"\r\n                }\r\n            ]\r\n        },\r\n        {\r\n            \"day\": \"화요일\",\r\n            \"title\": \"경량의 운동 및 독립 운동\",\r\n            \"duration\": \"35 민\",\r\n            \"intensity\": \"낮은\",\r\n            \"total_calories\": \"200 칼로리\",\r\n            \"category\": \"진정 효과 / 유연성\",\r\n            \"warmup_exercises\": [\r\n                {\r\n                    \"name\": \"빠른 걸음\",\r\n                    \"duration\": \"10 민\",\r\n                    \"sets\": \"1 세트\",\r\n                    \"calories\": \"5 0\",\r\n                    \"video_url\": null,\r\n                    \"video_status\": \"보류 중\"\r\n                },\r\n                {\r\n                    \"name\": \"동적 스트레칭\",\r\n                    \"duration\": \"5 민\",\r\n                    \"sets\": \"1 세트\",\r\n                    \"calories\": \"3 0\",\r\n                    \"video_url\": null,\r\n                    \"video_status\": \"보류 중\"\r\n                }\r\n            ],\r\n            \"main_exercises\": [\r\n                {\r\n                    \"name\": \"요가\",\r\n                    \"duration\": \"15 민\",\r\n                    \"sets\": \"1 세트\",\r\n                    \"calories\": \"12 0\",\r\n                    \"video_url\": null,\r\n                    \"video_status\": \"보류 중\"\r\n                }\r\n            ],\r\n            \"cooldown_exercises\": [\r\n                {\r\n                    \"name\": \"호흡 운동\",\r\n                    \"duration\": \"5 민\",\r\n                    \"sets\": \"1 세트\",\r\n                    \"calories\": \"0\",\r\n                    \"video_url\": null,\r\n                    \"video_status\": \"보류 중\"\r\n                }\r\n            ]\r\n        },\r\n        {\r\n            \"day\": \"수요일\",\r\n            \"title\": \"체력 강화 운동 코스\",\r\n            \"duration\": \"45 민\",\r\n            \"intensity\": \"중간\",\r\n            \"total_calories\": \"370 칼로리\",\r\n            \"category\": \"컨디셔닝 (가벼운 고강도 인터벌 트레이닝 / 서킷 트레이닝)\",\r\n            \"warmup_exercises\": [\r\n                {\r\n                    \"name\": \"빠른 걸음\",\r\n                    \"duration\": \"10 민\",\r\n                    \"sets\": \"1 세트\",\r\n                    \"calories\": \"5 0\",\r\n                    \"video_url\": null,\r\n                    \"video_status\": \"보류 중\"\r\n                },\r\n                {\r\n                    \"name\": \"동적 스트레칭\",\r\n                    \"duration\": \"5 민\",\r\n                    \"sets\": \"1 세트\",\r\n                    \"calories\": \"3 0\",\r\n                    \"video_url\": null,\r\n                    \"video_status\": \"보류 중\"\r\n                }\r\n            ],\r\n            \"main_exercises\": [\r\n                {\r\n                    \"name\": \"맨몸 운동 서킷\",\r\n                    \"duration\": \"10 민\",\r\n                    \"sets\": \"1 세트\",\r\n                    \"calories\": \"12 0\",\r\n                    \"video_url\": null,\r\n                    \"video_status\": \"보류 중\"\r\n                },\r\n                {\r\n                    \"name\": \"저항 밴드 회로\",\r\n                    \"duration\": \"10 민\",\r\n                    \"sets\": \"1 세트\",\r\n                    \"calories\": \"10 0\",\r\n                    \"video_url\": null,\r\n                    \"video_status\": \"보류 중\"\r\n                },\r\n                {\r\n                    \"name\": \"플랭크 변형\",\r\n                    \"duration\": \"5 민\",\r\n                    \"sets\": \"1 세트\",\r\n                    \"calories\": \"5 0\",\r\n                    \"video_url\": null,\r\n                    \"video_status\": \"보류 중\"\r\n                }\r\n            ],\r\n            \"cooldown_exercises\": [\r\n                {\r\n                    \"name\": \"스트레칭\",\r\n                    \"duration\": \"5 민\",\r\n                    \"sets\": \"1 세트\",\r\n                    \"calories\": \"2 0\",\r\n                    \"video_url\": null,\r\n                    \"video_status\": \"보류 중\"\r\n                }\r\n            ]\r\n        },\r\n        {\r\n            \"day\": \"목요일\",\r\n            \"title\": \"응답 및 규정\",\r\n            \"duration\": \"35 민\",\r\n            \"intensity\": \"낮은\",\r\n            \"total_calories\": \"150 칼로리\",\r\n            \"category\": \"진정 효과 / 유연성\",\r\n            \"warmup_exercises\": [\r\n                {\r\n                    \"name\": \"폼롤링\",\r\n                    \"duration\": \"10 민\",\r\n                    \"sets\": \"1 세트\",\r\n                    \"calories\": \"3 0\",\r\n                    \"video_url\": null,\r\n                    \"video_status\": \"보류 중\"\r\n                },\r\n                {\r\n                    \"name\": \"동적 스트레칭\",\r\n                    \"duration\": \"5 민\",\r\n                    \"sets\": \"1 세트\",\r\n                    \"calories\": \"3 0\",\r\n                    \"video_url\": null,\r\n                    \"video_status\": \"보류 중\"\r\n                }\r\n            ],\r\n            \"main_exercises\": [\r\n                {\r\n                    \"name\": \"태극권\",\r\n                    \"duration\": \"15 민\",\r\n                    \"sets\": \"1 세트\",\r\n                    \"calories\": \"9 0\",\r\n                    \"video_url\": null,\r\n                    \"video_status\": \"보류 중\"\r\n                }\r\n            ],\r\n            \"cooldown_exercises\": [\r\n                {\r\n                    \"name\": \"심사 숙고\",\r\n                    \"duration\": \"5 민\",\r\n                    \"sets\": \"1 세트\",\r\n                    \"calories\": \"0\",\r\n                    \"video_url\": null,\r\n                    \"video_status\": \"보류 중\"\r\n                }\r\n            ]\r\n        },\r\n        {\r\n            \"day\": \"금요일\",\r\n            \"title\": \"체력 및 유산소 운동\",\r\n            \"duration\": \"35 민\",\r\n            \"intensity\": \"중간\",\r\n            \"total_calories\": \"300 칼로리\",\r\n            \"category\": \"근력 운동 (가벼운 무게부터 중간 무게까지 + 맨몸 운동)\",\r\n            \"warmup_exercises\": [\r\n                {\r\n                    \"name\": \"빠른 걸음\",\r\n                    \"duration\": \"10 민\",\r\n                    \"sets\": \"1 세트\",\r\n                    \"calories\": \"5 0\",\r\n                    \"video_url\": null,\r\n                    \"video_status\": \"보류 중\"\r\n                },\r\n                {\r\n                    \"name\": \"동적 스트레칭\",\r\n                    \"duration\": \"5 민\",\r\n                    \"sets\": \"1 세트\",\r\n                    \"calories\": \"3 0\",\r\n                    \"video_url\": null,\r\n                    \"video_status\": \"보류 중\"\r\n                }\r\n            ],\r\n            \"main_exercises\": [\r\n                {\r\n                    \"name\": \"체스트 프레스\",\r\n                    \"duration\": \"5 민\",\r\n                    \"sets\": \"3 세트\",\r\n                    \"calories\": \"7 0\",\r\n                    \"video_url\": null,\r\n                    \"video_status\": \"보류 중\"\r\n                },\r\n                {\r\n                    \"name\": \"행\",\r\n                    \"duration\": \"5 민\",\r\n                    \"sets\": \"3 세트\",\r\n                    \"calories\": \"7 0\",\r\n                    \"video_url\": null,\r\n                    \"video_status\": \"보류 중\"\r\n                },\r\n                {\r\n                    \"name\": \"삼두근 킥백\",\r\n                    \"duration\": \"5 민\",\r\n                    \"sets\": \"3 세트\",\r\n                    \"calories\": \"6 0\",\r\n                    \"video_url\": null,\r\n                    \"video_status\": \"보류 중\"\r\n                }\r\n            ],\r\n            \"cooldown_exercises\": [\r\n                {\r\n                    \"name\": \"스트레칭\",\r\n                    \"duration\": \"5 민\",\r\n                    \"sets\": \"1 세트\",\r\n                    \"calories\": \"2 0\",\r\n                    \"video_url\": null,\r\n                    \"video_status\": \"보류 중\"\r\n                }\r\n            ]\r\n        },\r\n        {\r\n            \"day\": \"토요일\",\r\n            \"title\": \"가벼운 유산소 운동 및 회복\",\r\n            \"duration\": \"35 민\",\r\n            \"intensity\": \"낮은\",\r\n            \"total_calories\": \"200 칼로리\",\r\n            \"category\": \"진정 효과 / 유연성\",\r\n            \"warmup_exercises\": [\r\n                {\r\n                    \"name\": \"빠른 걸음\",\r\n                    \"duration\": \"10 민\",\r\n                    \"sets\": \"1 세트\",\r\n                    \"calories\": \"5 0\",\r\n                    \"video_url\": null,\r\n                    \"video_status\": \"보류 중\"\r\n                },\r\n                {\r\n                    \"name\": \"동적 스트레칭\",\r\n                    \"duration\": \"5 민\",\r\n                    \"sets\": \"1 세트\",\r\n                    \"calories\": \"3 0\",\r\n                    \"video_url\": null,\r\n                    \"video_status\": \"보류 중\"\r\n                }\r\n            ],\r\n            \"main_exercises\": [\r\n                {\r\n                    \"name\": \"요가\",\r\n                    \"duration\": \"15 민\",\r\n                    \"sets\": \"1 세트\",\r\n                    \"calories\": \"12 0\",\r\n                    \"video_url\": null,\r\n                    \"video_status\": \"보류 중\"\r\n                }\r\n            ],\r\n            \"cooldown_exercises\": [\r\n                {\r\n                    \"name\": \"호흡 운동\",\r\n                    \"duration\": \"5 민\",\r\n                    \"sets\": \"1 세트\",\r\n                    \"calories\": \"0\",\r\n                    \"video_url\": null,\r\n                    \"video_status\": \"보류 중\"\r\n                }\r\n            ]\r\n        },\r\n        {\r\n            \"day\": \"일요일\",\r\n            \"title\": \"치료의 날\",\r\n            \"duration\": \"35 민\",\r\n            \"intensity\": \"낮은\",\r\n            \"total_calories\": \"150 칼로리\",\r\n            \"category\": \"진정 효과 / 유연성\",\r\n            \"warmup_exercises\": [\r\n                {\r\n                    \"name\": \"폼롤링\",\r\n                    \"duration\": \"10 민\",\r\n                    \"sets\": \"1 세트\",\r\n                    \"calories\": \"3 0\",\r\n                    \"video_url\": null,\r\n                    \"video_status\": \"보류 중\"\r\n                },\r\n                {\r\n                    \"name\": \"동적 스트레칭\",\r\n                    \"duration\": \"5 민\",\r\n                    \"sets\": \"1 세트\",\r\n                    \"calories\": \"3 0\",\r\n                    \"video_url\": null,\r\n                    \"video_status\": \"보류 중\"\r\n                }\r\n            ],\r\n            \"main_exercises\": [\r\n                {\r\n                    \"name\": \"기공\",\r\n                    \"duration\": \"15 민\",\r\n                    \"sets\": \"1 세트\",\r\n                    \"calories\": \"9 0\",\r\n                    \"video_url\": null,\r\n                    \"video_status\": \"보류 중\"\r\n                }\r\n            ],\r\n            \"cooldown_exercises\": [\r\n                {\r\n                    \"name\": \"심사 숙고\",\r\n                    \"duration\": \"5 민\",\r\n                    \"sets\": \"1 세트\",\r\n                    \"calories\": \"0\",\r\n                    \"video_url\": null,\r\n                    \"video_status\": \"보류 중\"\r\n                }\r\n            ]\r\n        }\r\n    ],\r\n    \"videos_generated\": 0,\r\n    \"videos_cached\": 0,\r\n    \"language\": \"ko\",\r\n    \"translation_service\": true\r\n}"
+        }
+      ]
+    },
+    {
+      "name": "Generate Video",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"exercise_name\": \"빠른 걸음\",\r\n  \"force_regenerate\": true\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/workout/api/generate_video",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "workout",
+            "api",
+            "generate_video"
+          ]
+        }
+      },
+      "response": []
+    }
+  ]
+}

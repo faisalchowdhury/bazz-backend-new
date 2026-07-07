@@ -1,0 +1,241 @@
+{
+  "info": {
+    "_postman_id": "c13872ba-8f19-4859-9b6f-7123984d5a9b",
+    "name": "Bazz Device Management API",
+    "description": "Postman collection for Bazz Device Management API, supporting apple_watch_s3, fittech_a6, and fit_s3_ultra.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1. Get User Devices",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{TOKEN}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{BASE_URL}}/api/v1/devices",
+          "host": [
+            "{{BASE_URL}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "devices"
+          ]
+        },
+        "description": "Retrieve all devices paired by the authenticated user."
+      },
+      "response": []
+    },
+    {
+      "name": "2. Pair Device",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{TOKEN}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"FitTech A6\",\n  \"serialNumber\": \"AA:BB:CC:DD:EE:FF\",\n  \"macAddress\": \"AA:BB:CC:DD:EE:FF\",\n  \"deviceType\": \"fittech_a6\"\n}"
+        },
+        "url": {
+          "raw": "{{BASE_URL}}/api/v1/devices/pair",
+          "host": [
+            "{{BASE_URL}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "devices",
+            "pair"
+          ]
+        },
+        "description": "Pair a new device. Supported device types are apple_watch_s3, fittech_a6, and fit_s3_ultra."
+      },
+      "response": []
+    },
+    {
+      "name": "3. Update Device Status",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{TOKEN}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"isConnected\": true\n}"
+        },
+        "url": {
+          "raw": "{{BASE_URL}}/api/v1/devices/:deviceId/status",
+          "host": [
+            "{{BASE_URL}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "devices",
+            ":deviceId",
+            "status"
+          ],
+          "variable": [
+            {
+              "key": "deviceId",
+              "value": "685f3f9c4f1a123456789abc",
+              "description": "ID of the device to update status for"
+            }
+          ]
+        },
+        "description": "Update whether a device is currently connected. Enforces the rule that only one device can be connected at a time."
+      },
+      "response": []
+    },
+    {
+      "name": "4. Unpair Device",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{TOKEN}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{BASE_URL}}/api/v1/devices/:deviceId",
+          "host": [
+            "{{BASE_URL}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "devices",
+            ":deviceId"
+          ],
+          "variable": [
+            {
+              "key": "deviceId",
+              "value": "685f3f9c4f1a123456789abc",
+              "description": "ID of the device to unpair"
+            }
+          ]
+        },
+        "description": "Unpair/remove a device."
+      },
+      "response": []
+    },
+    {
+      "name": "5. Get Device Metrics",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{TOKEN}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{BASE_URL}}/api/v1/devices/:deviceId/metrics",
+          "host": [
+            "{{BASE_URL}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "devices",
+            ":deviceId",
+            "metrics"
+          ],
+          "variable": [
+            {
+              "key": "deviceId",
+              "value": "685f3f9c4f1a123456789abc",
+              "description": "ID of the device to get metrics for"
+            }
+          ]
+        },
+        "description": "Get latest aggregated metrics and sessions for the device."
+      },
+      "response": []
+    },
+    {
+      "name": "6. Save / Sync Device Metrics",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{TOKEN}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"steps\": 8542,\n  \"heartRate\": 76,\n  \"distanceMeters\": 5234,\n  \"calories\": 432,\n  \"activeMinutes\": 48,\n  \"deviceType\": \"apple_watch_s3\",\n  \"syncedAt\": \"2026-06-25T08:30:00.000Z\",\n  \"sessions\": [\n    {\n      \"steps\": 3200,\n      \"heartRate\": 82,\n      \"distanceMeters\": 1800,\n      \"startedAt\": \"2026-06-25T07:00:00.000Z\",\n      \"endedAt\": \"2026-06-25T07:45:00.000Z\",\n      \"deviceType\": \"apple_watch_s3\"\n    }\n  ]\n}"
+        },
+        "url": {
+          "raw": "{{BASE_URL}}/api/v1/devices/:deviceId/metrics",
+          "host": [
+            "{{BASE_URL}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "devices",
+            ":deviceId",
+            "metrics"
+          ],
+          "variable": [
+            {
+              "key": "deviceId",
+              "value": "685f3f9c4f1a123456789abc",
+              "description": "ID of the device to save metrics for"
+            }
+          ]
+        },
+        "description": "Save or sync device metrics and session data from mobile app."
+      },
+      "response": []
+    }
+  ],
+  "variable": [
+    {
+      "key": "BASE_URL",
+      "value": "http://localhost:5000",
+      "type": "string"
+    },
+    {
+      "key": "TOKEN",
+      "value": "YOUR_JWT_TOKEN_HERE",
+      "type": "string"
+    }
+  ]
+}

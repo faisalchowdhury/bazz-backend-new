@@ -7,6 +7,8 @@ import {
   deleteWorkout,
   generatePlan,
   getTodaysWorkout,
+  getTodaysOverview,
+  getMonthlyProgression,
   getUserWorkouts,
   getWorkout,
   skipSession,
@@ -22,12 +24,16 @@ const router = Router();
 // POST   /workouts              → save preferences (no AI yet)
 // GET    /workouts              → get all user workouts
 // GET    /workouts/today        → get today's workout (before /:id)
+// GET    /workouts/today/overview → get today's workout overview with completion percentage (before /:id)
+// GET    /workouts/progression/monthly → get 30 days progression report (before /:id)
 // GET    /workouts/:id          → get single workout
 // DELETE /workouts/:id          → delete pending workout
 
 router.post("/", guardRole("user"), createWorkout);
 router.get("/", guardRole("user"), getUserWorkouts);
 router.get("/today", guardRole("user"), getTodaysWorkout); // ← must stay before /:id
+router.get("/today/overview", guardRole("user"), getTodaysOverview); // ← must stay before /:id
+router.get("/progression/monthly", guardRole("user"), getMonthlyProgression); // ← must stay before /:id
 router.get("/:id", guardRole("user"), getWorkout);
 router.delete("/:id", guardRole("user"), deleteWorkout);
 

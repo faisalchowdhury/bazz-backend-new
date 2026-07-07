@@ -6,6 +6,7 @@ import {
   getMyRequestHistoryController,
   cancelRequestController,
   getIncomingRequestsController,
+  getAllTrainerRequestsController,
   acceptRequestController,
   rejectRequestController,
 } from "./trainerRequest.controller";
@@ -25,10 +26,12 @@ router.delete("/:id", guardRole("user"), cancelRequestController);
 
 // ── Trainer routes ────────────────────────────────────────────
 // GET    /requests/incoming       → trainer sees pending requests
+// GET    /requests/all             → trainer sees all requests (any status)
 // PATCH  /requests/:id/accept     → trainer accepts
 // PATCH  /requests/:id/reject     → trainer rejects with reason
 
 router.get("/incoming", guardRole("trainer"), getIncomingRequestsController);
+router.get("/all", guardRole("trainer"), getAllTrainerRequestsController);
 router.patch("/:id/accept", guardRole("trainer"), acceptRequestController);
 router.patch("/:id/reject", guardRole("trainer"), rejectRequestController);
 

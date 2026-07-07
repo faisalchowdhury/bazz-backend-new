@@ -6,9 +6,70 @@ import { TrainerModel } from "../trainer/trainer.model";
 import { WorkoutModel } from "../workoutGoal/workoutGoal.model";
 import { callAI } from "../../services/ai.service";
 import { findRelevantContent } from "../content/content.service";
+import { ANAM_API_KEY, ANAM_CUSTOM_LLM_ID } from "../../config";
 
 const ANAM_API_URL = "https://api.anam.ai/v1";
-const ANAM_API_KEY = process.env.ANAM_API_KEY || "";
+
+// ─────────────────────────────────────────────────────────────
+// ANAM — CREATE SESSION TOKEN (server-side, for Flutter/Web SDK)
+// POST /v1/auth/session-token
+// Uses trainer personaId + CUSTOMER_CLIENT_V1 so our backend owns the AI brain.
+// ─────────────────────────────────────────────────────────────
+
+const createAnamSessionToken = async (personaId: string): Promise<string> => {
+  const apiKey = ANAM_API_KEY || process.env.ANAM_API_KEY || "";
+
+  if (!apiKey) {
+    throw new Error(
+      "ANAM_API_KEY is not configured. Add it to your .env file and restart the server.",
+    );
+  }
+
+  const personaConfig: Record<string, string> = { personaId };
+  if (ANAM_CUSTOM_LLM_ID) {
+    personaConfig.llmId = ANAM_CUSTOM_LLM_ID;
+  }
+
+  const response = await fetch(`${ANAM_API_URL}/auth/session-token`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({ personaConfig }),
+  });
+
+  if (!response.ok) {
+    const errText = await response.text();
+    let detail = errText;
+    try {
+      const parsed = JSON.parse(errText) as { error?: string; message?: string };
+      detail = parsed.error || parsed.message || errText;
+    } catch {
+      // use raw text
+    }
+
+    if (response.status === 401) {
+      throw new Error(
+        `Invalid ANAM_API_KEY. Create a new key at https://lab.anam.ai/api-keys and update .env, then restart the server. (${detail})`,
+      );
+    }
+    if (response.status === 400 || response.status === 404) {
+      throw new Error(
+        `Invalid Anam personaId "${personaId}". Update the trainer persona via PUT /api/v1/trainer/:trainerId/anam with a persona from your Anam Lab account. (${detail})`,
+      );
+    }
+
+    throw new Error(`Anam API error: ${response.status} — ${detail}`);
+  }
+
+  const data = (await response.json()) as { sessionToken?: string };
+  if (!data.sessionToken) {
+    throw new Error("Anam API did not return a sessionToken");
+  }
+
+  return data.sessionToken;
+};
 
 // How many previous messages to inject (same as chat)
 const CALL_HISTORY_WINDOW = 10;
@@ -176,51 +237,28 @@ export const startAnamSession = async (userId: string, trainerId: string) => {
     throw new Error("You already have an active call session. End it first.");
   }
 
-  // 6. Call Anam API to create a session
-  let anamSessionId: string | undefined;
-  let sessionToken: string | undefined;
-
-  try {
-    const response = await fetch(`${ANAM_API_URL}/sessions`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${ANAM_API_KEY}`,
-      },
-      body: JSON.stringify({
-        personaId: trainer.anamAI.personaId,
-      }),
-    });
-
-    if (!response.ok) {
-      const err = await response.text();
-      throw new Error(`Anam API error: ${response.status} — ${err}`);
-    }
-
-    const data = await response.json();
-    anamSessionId = data.id || data.sessionId;
-    sessionToken = data.sessionToken || data.token;
-  } catch (err: any) {
-    // If Anam API is not reachable (dev mode), continue without it
-    console.warn("Anam API call failed (dev mode?):", err.message);
-  }
+  // 6. Get session token from Anam (required for client video SDK)
+  const sessionToken = await createAnamSessionToken(trainer.anamAI.personaId);
 
   // 7. Save session to DB
   const dbSession = await AnamSessionModel.create({
     userId,
     trainerId,
     personaId: trainer.anamAI.personaId,
-    anamSessionId,
     startedAt: new Date(),
     status: "active",
   });
 
   return {
     dbSessionId: (dbSession._id as Types.ObjectId).toString(),
-    anamSessionId,
     sessionToken,
     personaId: trainer.anamAI.personaId,
     trainerName: trainer.name,
+    customLlm: true,
+    llmId: ANAM_CUSTOM_LLM_ID,
+    integrationMode: "client_custom_llm",
+    flutterHint:
+      "Use MESSAGE_HISTORY_UPDATED → POST /anam/session/:dbSessionId/message → anamClient.talk(reply). Do NOT use sendUserMessage for assistant replies.",
     // Return current usage so frontend can show remaining minutes
     usage: {
       minutesRemaining: remaining,
@@ -283,7 +321,7 @@ export const sendAnamMessage = async (
   const last10 = chatThread.messages.slice(-CALL_HISTORY_WINDOW);
   const conversationHistory = last10.map((msg: any) => ({
     role: msg.role as "user" | "assistant",
-    content: msg.content,
+    content: msg.role === "assistant" ? cleanAnamResponse(msg.content) : msg.content,
   }));
 
   // 8. Check if user is asking about video content
@@ -325,6 +363,8 @@ export const sendAnamMessage = async (
     conversationHistory,
   });
 
+  const cleanedResponseText = cleanAnamResponse(aiResponseText);
+
   // 12. Save user message with source: "anam_call"
   const userMsg = {
     role: "user",
@@ -337,7 +377,7 @@ export const sendAnamMessage = async (
   // 13. Save assistant message with source: "anam_call"
   const assistantMsg = {
     role: "assistant",
-    content: aiResponseText,
+    content: cleanedResponseText,
     status: "sent",
     source: "anam_call",
     createdAt: new Date(),
@@ -459,9 +499,15 @@ export const getCallHistory = async (
   }
 
   // Filter only anam_call messages
-  const callMessages = chatThread.messages.filter(
-    (m: any) => m.source === "anam_call",
-  );
+  const callMessages = chatThread.messages
+    .filter((m: any) => m.source === "anam_call")
+    .map((m: any) => {
+      const obj = m.toObject ? m.toObject() : m;
+      if (obj.role === "assistant" && obj.content) {
+        obj.content = cleanAnamResponse(obj.content);
+      }
+      return obj;
+    });
 
   const total = callMessages.length;
   const startIndex = Math.max(0, total - page * limit);
@@ -653,7 +699,66 @@ Keep responses conversational and natural for spoken delivery — not too long.
 If suggesting a video, mention the TITLE ONLY (do not include URLs — they will find it in the app).
 Example: "You should check out my video called 'Perfect Bench Press Form Guide' in the app."
 Never break character. Never mention you are an AI.
+
+CRITICAL INSTRUCTIONS:
+1. Provide your response as raw, plain, conversational text ONLY.
+2. Do NOT output JSON, and do NOT wrap your response in markdown code blocks or JSON structures like {"response": "..."}.
+3. Respond directly as you would speak to the client in a real conversation.
 `.trim();
+
+/** Clean up assistant's response to ensure it's raw plain text and not wrapped in any JSON/code blocks */
+export const cleanAnamResponse = (text: string): string => {
+  const trimmed = text.trim();
+  if (!trimmed) return "";
+
+  let extracted = trimmed;
+
+  // 1. Try to extract JSON from markdown code blocks
+  const fenced = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  const candidate = fenced ? fenced[1].trim() : trimmed;
+
+  // 2. Try parsing as JSON
+  try {
+    if (candidate.startsWith("{") && candidate.endsWith("}")) {
+      const parsed = JSON.parse(candidate);
+      if (parsed && typeof parsed === "object") {
+        if (typeof parsed.response === "string") {
+          extracted = parsed.response.trim();
+        } else if (typeof parsed.message === "string") {
+          extracted = parsed.message.trim();
+        } else if (typeof parsed.content === "string") {
+          extracted = parsed.content.trim();
+        } else if (typeof parsed.text === "string") {
+          extracted = parsed.text.trim();
+        }
+      }
+    }
+  } catch (err) {
+    // If JSON parsing fails, fallback
+  }
+
+  // 3. Regex search for "response": "..." if JSON parsing failed but it has that pattern
+  if (extracted === trimmed) {
+    const responsePattern = /"response"\s*:\s*"([\s\S]*?)"\s*\}?$/i;
+    const match = candidate.match(responsePattern);
+    if (match && match[1]) {
+      try {
+        extracted = JSON.parse(`"${match[1]}"`);
+      } catch {
+        extracted = match[1]
+          .replace(/\\n/g, "\n")
+          .replace(/\\"/g, '"')
+          .trim();
+      }
+    }
+  }
+
+  // 4. Strip any occurrences of newlines (e.g. \n\n or \n) and replace them with spaces, collapsing consecutive spaces
+  return extracted
+    .replace(/[\r\n]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+};
 
 // Build user context — isAnamCall changes video section (title only vs title + URL)
 const buildUserContext = (

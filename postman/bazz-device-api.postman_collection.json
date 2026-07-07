@@ -1,0 +1,248 @@
+{
+	"info": {
+		"_postman_id": "8d3e2f5a-7b1c-4d2e-9f0a-6b8c9d0e1f2a",
+		"name": "Bazz Device Connection API",
+		"description": "Endpoints for managing smartwatch connections, pairing, and status updates.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "1. Get User Devices",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{TOKEN}}",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{BASE_URL}}/api/v1/devices",
+					"host": [
+						"{{BASE_URL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"devices"
+					]
+				},
+				"description": "Retrieve all devices paired by the authenticated user."
+			},
+			"response": []
+		},
+		{
+			"name": "2. Pair Device",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{TOKEN}}",
+						"type": "text"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"name\": \"Samsung Galaxy Watch 6\",\n  \"serialNumber\": \"SN123456789\",\n  \"macAddress\": \"00:1A:2B:3C:4D:5E\",\n  \"deviceType\": \"Watch\"\n}"
+				},
+				"url": {
+					"raw": "{{BASE_URL}}/api/v1/devices/pair",
+					"host": [
+						"{{BASE_URL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"devices",
+						"pair"
+					]
+				},
+				"description": "Pair a new device. Maximum 3 devices allowed per user."
+			},
+			"response": []
+		},
+		{
+			"name": "3. Update Device Status",
+			"request": {
+				"method": "PATCH",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{TOKEN}}",
+						"type": "text"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"isConnected\": true\n}"
+				},
+				"url": {
+					"raw": "{{BASE_URL}}/api/v1/devices/:deviceId/status",
+					"host": [
+						"{{BASE_URL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"devices",
+						":deviceId",
+						"status"
+					],
+					"variable": [
+						{
+							"key": "deviceId",
+							"value": "DEVICE_ID_HERE"
+						}
+					]
+				},
+				"description": "Update whether a device is currently connected."
+			},
+			"response": []
+		},
+		{
+			"name": "4. Set Primary Device",
+			"request": {
+				"method": "PATCH",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{TOKEN}}",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{BASE_URL}}/api/v1/devices/:deviceId/primary",
+					"host": [
+						"{{BASE_URL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"devices",
+						":deviceId",
+						"primary"
+					],
+					"variable": [
+						{
+							"key": "deviceId",
+							"value": "DEVICE_ID_HERE"
+						}
+					]
+				},
+				"description": "Set a specific device as the primary device for the user."
+			},
+			"response": []
+		},
+		{
+			"name": "5. Unpair Device",
+			"request": {
+				"method": "DELETE",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{TOKEN}}",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{BASE_URL}}/api/v1/devices/:deviceId",
+					"host": [
+						"{{BASE_URL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"devices",
+						":deviceId"
+					],
+					"variable": [
+						{
+							"key": "deviceId",
+							"value": "DEVICE_ID_HERE"
+						}
+					]
+				},
+				"description": "Remove/unpair a device."
+			},
+			"response": []
+		},
+		{
+			"name": "6. Sync Device Metrics",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{TOKEN}}",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{BASE_URL}}/api/v1/devices/:deviceId/metrics",
+					"host": [
+						"{{BASE_URL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"devices",
+						":deviceId",
+						"metrics"
+					],
+					"variable": [
+						{
+							"key": "deviceId",
+							"value": "DEVICE_ID_HERE"
+						}
+					]
+				},
+				"description": "Get/Sync health metrics from the device."
+			},
+			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "BASE_URL",
+			"value": "http://localhost:5000",
+			"type": "string"
+		},
+		{
+			"key": "TOKEN",
+			"value": "YOUR_JWT_TOKEN_HERE",
+			"type": "string"
+		}
+	]
+}

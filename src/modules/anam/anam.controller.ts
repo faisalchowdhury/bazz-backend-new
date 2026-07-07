@@ -9,6 +9,7 @@ import {
   getCallHistory,
   getSessionHistory,
   getAnamUsage,
+  cleanAnamResponse,
 } from "./anam.service";
 
 // ─────────────────────────────────────────────────────────────
@@ -103,6 +104,10 @@ export const startSession = async (
       });
       return;
     }
+    if (err.message.includes("Anam API") || err.message.includes("ANAM_API_KEY") || err.message.includes("personaId")) {
+      res.status(503).json({ success: false, message: err.message });
+      return;
+    }
     res.status(400).json({ success: false, message: err.message });
   }
 };
@@ -139,9 +144,20 @@ export const sendMessage = async (
       message.trim(),
     );
 
+    // Controller failsafe: Convert messages to plain objects and clean content of JSON wrappers
+    const responseData = {
+      ...result,
+      userMessage: result.userMessage ? (typeof (result.userMessage as any).toObject === "function" ? (result.userMessage as any).toObject() : result.userMessage) : null,
+      assistantMessage: result.assistantMessage ? (typeof (result.assistantMessage as any).toObject === "function" ? (result.assistantMessage as any).toObject() : result.assistantMessage) : null,
+    };
+
+    if (responseData.assistantMessage && responseData.assistantMessage.content) {
+      responseData.assistantMessage.content = cleanAnamResponse(responseData.assistantMessage.content);
+    }
+
     res.status(200).json({
       success: true,
-      data: result,
+      data: responseData,
     });
   } catch (err: any) {
     res.status(500).json({ success: false, message: err.message });

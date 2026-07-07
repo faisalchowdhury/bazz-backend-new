@@ -4,6 +4,8 @@ import { protect, trainerOnly } from "../../middlewares/auth";
 import {
   getAllTrainers,
   getTrainer,
+  getMyTrainer,
+  getTrainerByUser,
   getTrainerFull,
   getTrainersBySpecialty,
   getExerciseLibrary,
@@ -20,6 +22,8 @@ const router = Router();
 // ── Public routes ──────────────────────────────────────────────
 router.get("/", getAllTrainers);
 router.get("/specialty/:specialty", getTrainersBySpecialty); // before /:id
+router.get("/me", guardRole(["trainer"]), getMyTrainer); // userId from JWT
+router.get("/user/:userId", getTrainerByUser); // lookup by user account id
 router.get("/:id", getTrainer);
 router.get("/:id/full", getTrainerFull);
 router.get("/:id/blocks", getExerciseLibrary);

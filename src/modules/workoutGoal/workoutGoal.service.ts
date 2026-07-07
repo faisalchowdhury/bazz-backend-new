@@ -5,14 +5,16 @@ import {
   IWorkout,
 } from "./workoutGoal.interface";
 import { WorkoutModel } from "./workoutGoal.model";
+import { WorkoutStatsModel } from "./workoutStats.model";
 import { UserModel } from "../user/user.model";
 import { TrainerModel } from "../trainer/trainer.model";
 import { ExerciseBlockModel } from "../exerciseBlock/exerciseBlock.model";
 import { ExerciseModel } from "../exercise/exercise.model";
 import { ExerciseStepModel } from "../exerciseStep/exerciseStep.model";
+import { ContentModel } from "../content/content.model";
 import {
   callAI,
-  getTrainerSystemPrompt,
+  parseAIJsonResponse,
   summarizeSessionMemory,
 } from "../../services/ai.service";
 // Safely converts AI output to a number (1-10) or null
@@ -40,6 +42,15 @@ const toNumberOrNull = (value: any): number | null => {
 
   // AI returned a word — return null, don't crash
   return null;
+};
+
+const toObjectIdOrUndefined = (value: unknown): Types.ObjectId | undefined => {
+  if (value === null || value === undefined) return undefined;
+
+  const str = String(value).trim();
+  if (!Types.ObjectId.isValid(str)) return undefined;
+
+  return new Types.ObjectId(str);
 };
 // ─────────────────────────────────────────────────────────────
 // CREATE WORKOUT PREFERENCES
@@ -86,6 +97,10 @@ export const generateAIPlan = async (
   userId: string,
   workoutId: string,
 ): Promise<IWorkout> => {
+  if (!Types.ObjectId.isValid(workoutId)) {
+    throw new Error("Invalid workout ID");
+  }
+
   // 1. Load workout
   const workout = await WorkoutModel.findOne({ _id: workoutId, userId });
   if (!workout) throw new Error("Workout not found");
@@ -113,32 +128,42 @@ export const generateAIPlan = async (
   }).lean();
 
   if (approvedBlocks.length === 0) {
-    throw new Error("Trainer has no approved exercise blocks yet");
+    throw new Error(
+      "Trainer has no approved exercise blocks yet. Ask your trainer to add and approve exercises.",
+    );
   }
 
   // 6. Load exercises + steps for each block from separate collections
 
-  const blocksWithExercises = await Promise.all(
-    approvedBlocks.map(async (block) => {
-      const exercises = await ExerciseModel.find({
-        blockId: block._id,
-        isApproved: true,
-      }).lean();
+  const blocksWithExercises = (
+    await Promise.all(
+      approvedBlocks.map(async (block) => {
+        const exercises = await ExerciseModel.find({
+          blockId: block._id,
+          isApproved: true,
+        }).lean();
 
-      const exercisesWithSteps = await Promise.all(
-        exercises.map(async (exercise) => {
-          const steps = await ExerciseStepModel.find({
-            exerciseId: exercise._id,
-          })
-            .sort({ order: 1 })
-            .lean();
-          return { ...exercise, steps };
-        }),
-      );
+        const exercisesWithSteps = await Promise.all(
+          exercises.map(async (exercise) => {
+            const steps = await ExerciseStepModel.find({
+              exerciseId: exercise._id,
+            })
+              .sort({ order: 1 })
+              .lean();
+            return { ...exercise, steps };
+          }),
+        );
 
-      return { ...block, exercises: exercisesWithSteps };
-    }),
-  );
+        return { ...block, exercises: exercisesWithSteps };
+      }),
+    )
+  ).filter((block) => block.exercises.length > 0);
+
+  if (blocksWithExercises.length === 0) {
+    throw new Error(
+      "Trainer has no approved exercises yet. Ask your trainer to approve exercises in their library.",
+    );
+  }
 
   // 7. Build AI prompt
   const userMessage = buildWorkoutPromptFromPreferences({
@@ -149,26 +174,33 @@ export const generateAIPlan = async (
     exerciseBlocks: blocksWithExercises,
   });
 
-  // 8. Get trainer system prompt
-  const systemPrompt = getTrainerSystemPrompt(null, trainer.systemPrompt);
+  // 8. JSON-only system prompt (full trainer prompt asks for markdown lists — breaks JSON parse)
+  const systemPrompt = buildWorkoutPlanSystemPrompt(trainer);
 
-  // 9. Call AI
-  const aiResponse = await callAI({
-    systemPrompt:
-      systemPrompt +
-      "\n\nIMPORTANT: Output ONLY valid JSON. No explanation. No markdown.",
-    userMessage,
-    maxTokens: 3500,
-  });
-
-  // 10. Parse AI response
+  // 9. Call AI — fall back to rule-based plan if AI output is invalid
   let plan: any;
   try {
-    const clean = aiResponse.replace(/```json|```/g, "").trim();
-    plan = JSON.parse(clean);
-  } catch {
-    throw new Error("AI returned invalid plan. Please try again.");
+    const aiResponse = await callAI({
+      systemPrompt,
+      userMessage,
+      maxTokens: 4096,
+      jsonPrefill: true,
+    });
+    plan = parseAIJsonResponse(aiResponse);
+  } catch (err) {
+    console.warn(
+      "Workout AI plan failed, using library fallback:",
+      err instanceof Error ? err.message : err,
+    );
+    plan = buildFallbackWorkoutPlan(workout, trainer, blocksWithExercises);
   }
+
+  if (!Array.isArray(plan.mainWork) || plan.mainWork.length === 0) {
+    plan = buildFallbackWorkoutPlan(workout, trainer, blocksWithExercises);
+  }
+
+  // Find a matching video content based on user preferences
+  const suggestedVideo = await getSuggestedVideo(workout, (trainer._id as any).toString());
 
   // 11. Map exercises — snapshot full data from collections into workout doc
   const aiPlan: IAIGeneratedPlan = {
@@ -185,6 +217,7 @@ export const generateAIPlan = async (
     coolDown: plan.coolDown || [],
     estimatedDurationMinutes: plan.estimatedDurationMinutes || workout.duration,
     cardioGuidance: plan.cardioGuidance || "",
+    suggestedVideo,
     checkInQuestion:
       plan.checkInQuestion ||
       "Did you complete today's session? What loads did you use and how hard was it (RPE 1-10)? Any pain or equipment issues?",
@@ -297,6 +330,49 @@ export const completeSessionService = async (
   workout.aiPlan.checkInRespondedAt = new Date();
   workout.markModified("aiPlan");
   await workout.save();
+
+  // Save date-wise statistics to WorkoutStats collection on session completion
+  let totalExercises = 0;
+  let completedExercises = 0;
+
+  if (workout.aiPlan) {
+    const exercises: any[] = [
+      ...(workout.aiPlan.mainWork || []),
+      ...(workout.aiPlan.accessories || []),
+      ...(workout.aiPlan.finisher || []),
+    ];
+    totalExercises = exercises.length;
+    completedExercises = exercises.filter((ex) => ex.isCompleted).length;
+  }
+
+  const completionPercentage =
+    totalExercises > 0
+      ? Math.round((completedExercises / totalExercises) * 100)
+      : 0;
+
+  await WorkoutStatsModel.findOneAndUpdate(
+    { userId: workout.userId, workoutId: workout._id },
+    {
+      $set: {
+        userId: workout.userId,
+        workoutId: workout._id,
+        date: workout.date || new Date(),
+        goal: workout.goal,
+        focusArea: workout.focusArea,
+        duration: workout.duration,
+        workout_intensity: workout.workout_intensity,
+        equipment_availablity: workout.equipment_availablity,
+        workout_environment: workout.workout_environment,
+        totalExercises,
+        completedExercises,
+        completionPercentage,
+        status: "completed",
+      },
+    },
+    { upsert: true, new: true },
+  ).catch((err) => {
+    console.error("Failed to save WorkoutStats:", err);
+  });
 
   // 2. Build context for memory summarizer
   const exerciseNames = [
@@ -481,6 +557,96 @@ export const deleteWorkoutService = async (
 // HELPERS
 // ─────────────────────────────────────────────────────────────
 
+// Dedicated prompt for structured plan generation — not the chat/call persona prompt
+const buildWorkoutPlanSystemPrompt = (trainer: {
+  name: string;
+  specialty: string;
+}): string =>
+  `
+You are ${trainer.name}, a ${trainer.specialty} fitness coach.
+Your job is to output ONE valid JSON object for today's workout plan.
+
+Rules:
+- Output JSON only. No markdown. No code fences. No numbered lists. No text before or after the JSON.
+- Write coachNote and nutritionTip in your coaching voice (brief, motivational).
+- Select exercises only from the library provided in the user message.
+- Copy exact exerciseId and blockId values from the library (24-character hex strings).
+- Do NOT include steps or substitutions — the server adds those automatically.
+- Keep mainWork to 4–6 exercises, accessories to 0–3, finisher to 0–2.
+`.trim();
+
+const buildFallbackWorkoutPlan = (
+  workout: IWorkout,
+  trainer: { name: string },
+  blocksWithExercises: any[],
+) => {
+  const flat = blocksWithExercises.flatMap((block) =>
+    block.exercises.map((ex: any) => ({
+      ...ex,
+      blockId: block._id,
+      blockName: block.name,
+    })),
+  );
+
+  const focus = (workout.focusArea || []).map((v) => v.toLowerCase());
+  const scored = flat
+    .map((ex) => {
+      let score = 0;
+      const muscleGroup = (ex.muscleGroup || "").toLowerCase();
+      if (focus.includes(muscleGroup)) score += 3;
+      if (focus.includes("full_body")) score += 1;
+      return { ex, score };
+    })
+    .sort((a, b) => b.score - a.score);
+
+  const mainCount = Math.min(5, Math.max(3, scored.length));
+  const main = scored.slice(0, mainCount);
+  const accessories = scored.slice(mainCount, mainCount + 2);
+
+  const toPlanExercise = (item: { ex: any; score: number }, order: number) => ({
+    exerciseId: item.ex._id.toString(),
+    exerciseName: item.ex.name,
+    blockId: item.ex.blockId.toString(),
+    blockName: item.ex.blockName,
+    muscleGroup: item.ex.muscleGroup,
+    sets: item.ex.sets,
+    reps: item.ex.reps,
+    restTime: item.ex.restTime,
+    rpe: item.ex.rpe,
+    order,
+  });
+
+  return {
+    coachNote: `${trainer.name} built today's session around your focus: ${workout.focusArea.join(", ")}.`,
+    thisWeekFocus: workout.focusArea.slice(0, 3),
+    nutritionTip:
+      "Stay hydrated and spread protein evenly across meals to support recovery.",
+    estimatedDurationMinutes: workout.duration,
+    cardioGuidance: null,
+    warmUp: [
+      {
+        order: 1,
+        instruction: "5 minutes light cardio plus dynamic stretching",
+        duration: "5 minutes",
+      },
+    ],
+    mainWork: main.map((item, index) => toPlanExercise(item, index + 1)),
+    accessories: accessories.map((item, index) =>
+      toPlanExercise(item, index + 1),
+    ),
+    finisher: [],
+    coolDown: [
+      {
+        order: 1,
+        instruction: "Stretch the muscle groups you trained today",
+        duration: "5 minutes",
+      },
+    ],
+    checkInQuestion:
+      "Did you complete today's session? What loads did you use and how hard was it (RPE 1-10)? Any pain or equipment issues?",
+  };
+};
+
 // Build AI prompt from workout preferences + loaded blocks
 const buildWorkoutPromptFromPreferences = ({
   user,
@@ -520,13 +686,13 @@ ACTIVE FLAGS: ${memory.rollingMemory?.flags?.join(", ") || "none"}
 `
     : "No previous memory. This is the user's first session.";
 
-  // Format blocks for AI — only what the AI needs to select exercises
+  // Format blocks for AI — selection fields only (steps/substitutions added server-side)
   const blocksContext = exerciseBlocks.map((block: any) => ({
     blockId: block._id,
     blockName: block.name,
     category: block.category,
     exercises: block.exercises.map((e: any) => ({
-      id: e._id,
+      exerciseId: e._id,
       name: e.name,
       muscleGroup: e.muscleGroup,
       difficulty: e.difficulty,
@@ -536,8 +702,6 @@ ACTIVE FLAGS: ${memory.rollingMemory?.flags?.join(", ") || "none"}
       rpe: e.rpe,
       equipment: e.equipment,
       tags: e.tags || [],
-      steps: e.steps || [],
-      substitutions: e.substitutions || {},
     })),
   }));
 
@@ -567,12 +731,14 @@ TASK:
 Generate a personalized workout plan based on the user's preferences above.
 Rules:
 - Pick exercises ONLY from the trainer's library above
+- For each exercise, copy the exact exerciseId and blockId from the library (24-character hex strings)
 - Match exercises to today's focusArea and equipment_availablity
 - Respect the user's injuries and limitations
 - Avoid exercises performed in the last 2 sessions
 - Fit within the requested duration (${workout.duration} minutes)
 - Match the requested intensity level
-- Always copy the full steps and substitutions from the library into the plan
+- Do NOT include steps or substitutions in your JSON — the server adds those from the library automatically
+- Return compact JSON only — no markdown, no commentary
 
 Return ONLY this exact JSON:
 {
@@ -586,19 +752,16 @@ Return ONLY this exact JSON:
   ],
   "mainWork": [
     {
-      "exerciseId": "id from library",
-      "exerciseName": "name",
-      "blockId": "block id",
-      "blockName": "block name",
+      "exerciseId": "<exact exerciseId from library>",
+      "exerciseName": "<exact name from library>",
+      "blockId": "<exact blockId from library>",
+      "blockName": "<exact blockName from library>",
       "muscleGroup": "muscle group",
       "sets": 3,
       "reps": "8-12",
       "restTime": "60s",
       "rpe": "7-8",
-      "order": 1,
-      "steps": [],
-      "substitutions": {},
-      "isCompleted": false
+      "order": 1
     }
   ],
   "accessories": [],
@@ -619,6 +782,8 @@ const mapPlannedExercises = (
   return aiExercises.map((e: any, index: number) => {
     // Find the source exercise in the loaded blocks
     let sourceExercise: any = null;
+    let sourceBlock: any = null;
+
     for (const block of blocksWithExercises) {
       const found = block.exercises.find(
         (ex: any) =>
@@ -627,15 +792,25 @@ const mapPlannedExercises = (
       );
       if (found) {
         sourceExercise = found;
+        sourceBlock = block;
         break;
       }
     }
 
+    const exerciseId =
+      toObjectIdOrUndefined(e.exerciseId) ??
+      toObjectIdOrUndefined(sourceExercise?._id);
+
+    const blockId =
+      toObjectIdOrUndefined(e.blockId) ??
+      toObjectIdOrUndefined(sourceBlock?._id) ??
+      toObjectIdOrUndefined(sourceExercise?.blockId);
+
     return {
-      exerciseId: e.exerciseId ? new Types.ObjectId(e.exerciseId) : undefined,
-      exerciseName: e.exerciseName,
-      blockId: e.blockId ? new Types.ObjectId(e.blockId) : undefined,
-      blockName: e.blockName,
+      exerciseId,
+      exerciseName: e.exerciseName || sourceExercise?.name,
+      blockId,
+      blockName: e.blockName || sourceBlock?.name,
       muscleGroup: e.muscleGroup || sourceExercise?.muscleGroup,
       sets: e.sets || sourceExercise?.sets || 3,
       reps: e.reps || sourceExercise?.reps || "8-12",
@@ -649,3 +824,256 @@ const mapPlannedExercises = (
     };
   });
 };
+
+/**
+ * Finds a matching video from the Content collection based on client workout preferences.
+ * Checks title, description, muscleGroups, equipment, and tags.
+ */
+export const getSuggestedVideo = async (
+  workout: IWorkout,
+  trainerId: string,
+): Promise<string | undefined> => {
+  try {
+    const focusAreas = (workout.focusArea || []).map((v) => v.toLowerCase());
+    const equipmentAvail = (workout.equipment_availablity || []).map((v) => v.toLowerCase());
+    const goals = (workout.goal || []).map((v) => v.toLowerCase());
+
+    // 1. Fetch all published, active video content for this trainer
+    let videos = await ContentModel.find({
+      trainerId,
+      contentType: "video",
+      isPublished: true,
+      isActive: true,
+    }).lean();
+
+    // If no videos for this trainer, fallback to other trainers' videos
+    if (videos.length === 0) {
+      videos = await ContentModel.find({
+        contentType: "video",
+        isPublished: true,
+        isActive: true,
+      }).lean();
+    }
+
+    if (videos.length === 0) {
+      return undefined;
+    }
+
+    // 2. Score each video based on matching preferences
+    const scoredVideos = videos.map((video) => {
+      let score = 0;
+
+      const videoTitle = (video.title || "").toLowerCase();
+      const videoDesc = (video.description || "").toLowerCase();
+      const videoTags = (video.tags || []).map((t) => t.toLowerCase());
+      const videoMuscleGroups = (video.muscleGroups || []).map((m) => m.toLowerCase());
+      const videoEquipment = (video.equipment || []).map((e) => e.toLowerCase());
+
+      // Muscle group match: exact match is high value
+      focusAreas.forEach((area) => {
+        if (videoMuscleGroups.includes(area)) {
+          score += 5;
+        } else if (videoTitle.includes(area) || videoDesc.includes(area) || videoTags.includes(area)) {
+          score += 1;
+        }
+      });
+
+      // Equipment match
+      equipmentAvail.forEach((equip) => {
+        if (videoEquipment.includes(equip)) {
+          score += 3;
+        } else if (videoTitle.includes(equip) || videoDesc.includes(equip) || videoTags.includes(equip)) {
+          score += 1;
+        }
+      });
+
+      // Goal match
+      goals.forEach((goal) => {
+        if (videoTags.includes(goal)) {
+          score += 4;
+        } else if (videoTitle.includes(goal) || videoDesc.includes(goal)) {
+          score += 2;
+        }
+      });
+
+      return {
+        video,
+        score,
+      };
+    });
+
+    // Sort by score (descending) and then by viewCount (descending) as a tie-breaker
+    scoredVideos.sort((a, b) => {
+      if (b.score !== a.score) {
+        return b.score - a.score;
+      }
+      return (b.video.viewCount || 0) - (a.video.viewCount || 0);
+    });
+
+    // 3. Return the best matching video's videoUrl if it has one
+    const bestMatch = scoredVideos[0];
+    return bestMatch?.video?.videoUrl;
+  } catch (error) {
+    // Gracefully handle errors so workout generation doesn't fail
+    console.error("Error finding suggested video:", error);
+    return undefined;
+  }
+};
+
+// ─────────────────────────────────────────────────────────────
+// GET TODAY'S WORKOUT OVERVIEW WITH COMPLETION PERCENTAGE
+// ─────────────────────────────────────────────────────────────
+export const getTodaysWorkoutOverviewService = async (userId: string) => {
+  const start = new Date();
+  start.setHours(0, 0, 0, 0);
+  const end = new Date();
+  end.setHours(23, 59, 59, 999);
+
+  // 1. Fetch today's workout for the user
+  const workout = await WorkoutModel.findOne({
+    userId,
+    date: { $gte: start, $lte: end },
+  }).lean();
+
+  if (!workout) {
+    return null;
+  }
+
+  // 2. Count total exercises and completed exercises
+  let totalExercises = 0;
+  let completedExercises = 0;
+
+  if (workout.aiPlan) {
+    const exercises: any[] = [
+      ...(workout.aiPlan.mainWork || []),
+      ...(workout.aiPlan.accessories || []),
+      ...(workout.aiPlan.finisher || []),
+    ];
+
+    totalExercises = exercises.length;
+    completedExercises = exercises.filter((ex) => ex.isCompleted).length;
+  }
+
+  // 3. Calculate percentage
+  const completionPercentage =
+    totalExercises > 0
+      ? Math.round((completedExercises / totalExercises) * 100)
+      : 0;
+
+  // 4. Return the requested overview
+  return {
+    workoutId: workout._id,
+    goal: workout.goal,
+    focusArea: workout.focusArea,
+    duration: workout.duration,
+    workout_intensity: workout.workout_intensity,
+    equipment_availablity: workout.equipment_availablity,
+    workout_environment: workout.workout_environment,
+    status: workout.status,
+    totalExercises,
+    completedExercises,
+    completionPercentage,
+  };
+};
+
+// ─────────────────────────────────────────────────────────────
+// GET MONTHLY PROGRESSION REPORT (LAST 30 DAYS)
+// ─────────────────────────────────────────────────────────────
+export const getMonthlyProgressionService = async (userId: string) => {
+  const datesList: string[] = [];
+  const today = new Date();
+
+  // Generate 30 dates in local server timezone: from 29 days ago up to today
+  for (let i = 29; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(today.getDate() - i);
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    datesList.push(`${year}-${month}-${day}`);
+  }
+
+  // Query boundaries
+  const boundaryStart = new Date();
+  boundaryStart.setDate(today.getDate() - 35); // Query wider to catch any boundary workouts
+  boundaryStart.setHours(0, 0, 0, 0);
+
+  const boundaryEnd = new Date();
+  boundaryEnd.setDate(today.getDate() + 5);
+  boundaryEnd.setHours(23, 59, 59, 999);
+
+  // Fetch all workouts for this user in the boundary
+  const workouts = await WorkoutModel.find({
+    userId,
+    date: { $gte: boundaryStart, $lte: boundaryEnd },
+  }).lean();
+
+  // Create a map by "YYYY-MM-DD" using UTC methods to safely extract original saved dates without timezone offsets
+  const workoutMap: Record<string, any> = {};
+  for (const w of workouts) {
+    if (w.date) {
+      const d = new Date(w.date);
+      const year = d.getUTCFullYear();
+      const month = String(d.getUTCMonth() + 1).padStart(2, "0");
+      const day = String(d.getUTCDate()).padStart(2, "0");
+      const dateStr = `${year}-${month}-${day}`;
+
+      const existing = workoutMap[dateStr];
+      // Prioritize completed workouts first, then in-progress, then anything else
+      if (!existing) {
+        workoutMap[dateStr] = w;
+      } else {
+        const getPriority = (status: string) => {
+          if (status === "completed") return 3;
+          if (status === "in_progress") return 2;
+          if (status === "pending") return 1;
+          return 0;
+        };
+        if (getPriority(w.status) > getPriority(existing.status)) {
+          workoutMap[dateStr] = w;
+        }
+      }
+    }
+  }
+
+  // Map dates sequentially to construct the 30-day report
+  return datesList.map((dateStr) => {
+    const workout = workoutMap[dateStr];
+
+    if (!workout) {
+      return {
+        date: dateStr,
+        totalExercises: 0,
+        completedExercises: 0,
+        completionPercentage: 0,
+      };
+    }
+
+    let totalExercises = 0;
+    let completedExercises = 0;
+
+    if (workout.aiPlan) {
+      const exercises: any[] = [
+        ...(workout.aiPlan.mainWork || []),
+        ...(workout.aiPlan.accessories || []),
+        ...(workout.aiPlan.finisher || []),
+      ];
+
+      totalExercises = exercises.length;
+      completedExercises = exercises.filter((ex: any) => ex.isCompleted).length;
+    }
+
+    const completionPercentage =
+      totalExercises > 0
+        ? Math.round((completedExercises / totalExercises) * 100)
+        : 0;
+
+    return {
+      date: dateStr,
+      totalExercises,
+      completedExercises,
+      completionPercentage,
+    };
+  });
+};
+

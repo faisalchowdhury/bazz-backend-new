@@ -11,6 +11,7 @@ import { TrainerModel } from "../trainer/trainer.model";
 import { WorkoutModel } from "../workoutGoal/workoutGoal.model";
 import { callAI } from "../../services/ai.service";
 import { findRelevantContent } from "../content/content.service";
+import { cleanAnamResponse } from "../anam/anam.service";
 
 // How many previous messages to inject into each AI call
 const CHAT_HISTORY_WINDOW = 10;
@@ -342,7 +343,13 @@ export const getChatHistory = async (
     };
   }
 
-  const all = chat.messages;
+  const all = chat.messages.map((m: any) => {
+    const obj = m.toObject ? m.toObject() : m;
+    if (obj.role === "assistant" && obj.content && obj.source === "anam_call") {
+      obj.content = cleanAnamResponse(obj.content);
+    }
+    return obj;
+  });
   const total = all.length;
   const startIndex = Math.max(0, total - page * limit);
   const endIndex = Math.max(0, total - (page - 1) * limit);

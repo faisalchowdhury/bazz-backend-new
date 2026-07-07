@@ -102,15 +102,9 @@ export const getAllTrainers = async (
 // GET SINGLE TRAINER (profile only — no blocks)
 // ─────────────────────────────────────────────────────────────
 
-export const getTrainerById = async (trainerId: string) => {
-  const trainer: any = await TrainerModel.findById(trainerId)
-    .populate("userId", "firstName lastName email profilePicture coverPhoto")
-    .lean();
-
+const normalizeTrainerProfile = (trainer: any) => {
   if (!trainer) return trainer;
 
-  // Ensure profilePicture / coverPicture are always present.
-  // Fall back to "" when the trainer's user hasn't uploaded them.
   const user = trainer.userId || {};
   return {
     ...trainer,
@@ -120,6 +114,22 @@ export const getTrainerById = async (trainerId: string) => {
       coverPicture: user.coverPhoto || "",
     },
   };
+};
+
+export const getTrainerById = async (trainerId: string) => {
+  const trainer: any = await TrainerModel.findById(trainerId)
+    .populate("userId", "firstName lastName email profilePicture coverPhoto")
+    .lean();
+
+  return normalizeTrainerProfile(trainer);
+};
+
+export const getTrainerByUserId = async (userId: string) => {
+  const trainer: any = await TrainerModel.findOne({ userId })
+    .populate("userId", "firstName lastName email profilePicture coverPhoto")
+    .lean();
+
+  return normalizeTrainerProfile(trainer);
 };
 
 // ─────────────────────────────────────────────────────────────

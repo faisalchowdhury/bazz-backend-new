@@ -145,6 +145,9 @@ export interface IAIGeneratedPlan {
   estimatedDurationMinutes: number;
   cardioGuidance?: string;
 
+  // Suggested video matching client preferences
+  suggestedVideo?: string;
+
   // Check-in — filled after session
   checkInQuestion: string;
   checkInResponse?: string;

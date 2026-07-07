@@ -6,6 +6,7 @@ import {
   getMyRequestHistory,
   cancelRequest,
   getIncomingRequests,
+  getAllTrainerRequests,
   acceptRequest,
   rejectRequest,
 } from "./trainerRequest.service";
@@ -111,7 +112,7 @@ export const cancelRequestController = async (
 // ─────────────────────────────────────────────────────────────
 // GET /requests/incoming
 // Trainer sees incoming requests
-// Query: status? (default: pending)
+// Query: status?, search?, page?, limit?
 // ─────────────────────────────────────────────────────────────
 
 export const getIncomingRequestsController = async (
@@ -120,7 +121,7 @@ export const getIncomingRequestsController = async (
 ): Promise<void> => {
   try {
     const userId = (req.user as JwtPayloadWithUser).id;
-    const { status } = req.query;
+    const { status, search, page, limit } = req.query;
 
     // Get trainerId from userId
     const { TrainerModel } = await import("../trainer/trainer.model");
@@ -132,12 +133,50 @@ export const getIncomingRequestsController = async (
       return;
     }
 
-    const result = await getIncomingRequests(
-      (trainer._id as any).toString(),
-      status as string | undefined,
-    );
+    const result = await getIncomingRequests(trainer.id, {
+      status: status as string | undefined,
+      search: search as string | undefined,
+      page: page ? parseInt(page as string, 10) : 1,
+      limit: limit ? parseInt(limit as string, 10) : 10,
+    });
 
-    res.status(200).json({ success: true, data: result });
+    res.status(200).json({ success: true, ...result });
+  } catch (err: any) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+// ─────────────────────────────────────────────────────────────
+// GET /requests/all
+// Trainer sees all requests (any status)
+// Query: search?, page?, limit?  (optional status? to filter)
+// ─────────────────────────────────────────────────────────────
+
+export const getAllTrainerRequestsController = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  try {
+    const userId = (req.user as JwtPayloadWithUser).id;
+    const { status, search, page, limit } = req.query;
+
+    const { TrainerModel } = await import("../trainer/trainer.model");
+    const trainer = await TrainerModel.findOne({ userId });
+    if (!trainer) {
+      res
+        .status(404)
+        .json({ success: false, message: "Trainer profile not found" });
+      return;
+    }
+
+    const result = await getAllTrainerRequests(trainer.id, {
+      status: status as string | undefined,
+      search: search as string | undefined,
+      page: page ? parseInt(page as string, 10) : 1,
+      limit: limit ? parseInt(limit as string, 10) : 10,
+    });
+
+    res.status(200).json({ success: true, ...result });
   } catch (err: any) {
     res.status(500).json({ success: false, message: err.message });
   }

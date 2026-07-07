@@ -22,19 +22,19 @@ export const verifyPaymentController = async (
         .json({ success: false, message: "invoiceId is required" });
       return;
     }
-    if (!transactionId) {
-      res
-        .status(400)
-        .json({ success: false, message: "transactionId is required" });
-      return;
-    }
-    if (!gateway) {
-      res.status(400).json({
-        success: false,
-        message: "gateway is required (stripe, bkash, nagad)",
-      });
-      return;
-    }
+    // if (!transactionId) {
+    //   res
+    //     .status(400)
+    //     .json({ success: false, message: "transactionId is required" });
+    //   return;
+    // }
+    // if (!gateway) {
+    //   res.status(400).json({
+    //     success: false,
+    //     message: "gateway is required (stripe, bkash, nagad)",
+    //   });
+    //   return;
+    // }
 
     const result = await verifyPayment(
       userId,

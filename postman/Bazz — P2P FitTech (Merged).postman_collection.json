@@ -1,0 +1,5354 @@
+{
+  "info": {
+    "_postman_id": "d60e7b62-0692-4034-bf26-5ac1d8dd0f74",
+    "name": "Bazz — P2P FitTech (Merged)",
+    "description": "Complete, corrected Postman collection for the Bazz / P2P FitTech API.\n\nALL routes mount under /api/v1 (see src/routes/index.ts) and the dev server listens on PORT 4001 (src/config/index.ts).\nSo set:\n  baseUrl = http://localhost:4001/api/v1\nEvery request path is RELATIVE to that (no extra /api/v1 in the path).\n\nTokens are captured automatically on login. Set the role tokens manually if you skip login:\n  userToken / trainerToken / adminToken\n\nMerged from the legacy 'Main' collection + the new modules (Commission, Promo Code, Withdrawal, Update, Subscription, Payment, Invoice). Fixed conflicts:\n - unified {{base_url}} / {{baseUrl}} → baseUrl (now includes /api/v1)\n - /trainers (plural) → /trainer (singular, real route)\n - category update/delete → PUT|DELETE /category/:id\n - content → /content/content (+ /content/categories)\n - invoice amount is in CENTS (2900 = $29.00)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "47838073"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.success && res.data && res.data.token) {",
+                  "  pm.collectionVariables.set('trainerToken', res.data.token);",
+                  "  console.log('✅ token saved');",
+                  "}"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "// // trainer\n// {\n//   \"firstName\": \"Gabriel\",\n//   \"lastName\": \"Rowling\",\n//   \"email\": \"gabriel@trainer.com\",\n//   \"password\": \"Password123!\",\n//   \"gender\": \"male\",\n//   \"role\": \"trainer\"\n// }\n\n// user \n\n{\n  \"firstName\": \"New\",\n  \"lastName\": \"user\",\n  \"email\": \"user777@gmail.com\",\n  \"password\": \"12345678!\",\n  \"gender\": \"male\",\n  \"role\": \"user\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
+            },
+            "description": "POST /auth/register — accepts JSON or multipart (optional profilePicture file). role: user | trainer."
+          },
+          "response": []
+        },
+        {
+          "name": "Login (Trainer)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.success && res.data && res.data.token) {",
+                  "  pm.collectionVariables.set('trainerToken', res.data.token);",
+                  "  console.log('✅ trainerToken saved');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"gabriel@trainer.com\",\n  \"password\": \"Password123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Login (User)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.success && res.data && res.data.token) {",
+                  "  pm.collectionVariables.set('userToken', res.data.token);",
+                  "  console.log('✅ userToken saved');",
+                  "}"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{user}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@gmail.com\",\n  \"password\": \"12345678!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Login (Admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.success && res.data && res.data.token) {",
+                  "  pm.collectionVariables.set('adminToken', res.data.token);",
+                  "  console.log('✅ adminToken saved');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@gmail.com\",\n  \"password\": \"1qazxsw2\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Verify OTP",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"otp\": \"159058\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/verify-otp",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "verify-otp"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Resend OTP",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"john@user.com\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/resend-otp",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "resend-otp"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Forgot Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"john@user.com\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/forget-password",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "forget-password"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Reset Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"john@user.com\",\n  \"password\": \"NewPassword123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/reset-password",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "reset-password"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Change Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"oldPassword\": \"Password123!\",\n  \"newPassword\": \"NewPassword123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/change-password",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "change-password"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "👤 User / Profile",
+      "item": [
+        {
+          "name": "Get My Profile",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5YjdkMDg0YTBmZGQ1MzBkMDM0YzIwMSIsInJvbGUiOiJ0cmFpbmVyIiwiZW1haWwiOiJnYWJyaWVsQHRyYWluZXIuY29tIiwiaWF0IjoxNzgxNjg0NTExLCJleHAiOjE3ODIyODkzMTF9.nUPtVTfs1VKII2kQfuK45rCkgz_kVVP78PdqH6-Dw8M",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "me"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Self Info (my-profile)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/my-profile",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "my-profile"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update My Profile",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userId}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": " {\n   \"firstName\": \"John\",\n   \"lastName\": \"Doe\",\n  \"dateOfBirth\": \"1990-01-01\",\n  \"gender\": \"male\",\n  \"bio\": \"Fitness enthusiast and aspiring boxer.\",\n  \"profilePicture\": \"/images/avatar.png\",\n  \"coverPhoto\": \"/images/cover.jpg\",\n  \"height\": 180,\n   \"weight\": 85.5,\n \"fitnessLevel\": \"intermediate\",\n  \"primaryGoal\": \"muscle_gain\",\n\"availableEquipment\": \"Full Gym\",\n\"trainingDaysPerWeek\": 5,\n\"injuries\": [\"Knee pain\", \"Lower back tension\"],\n\"onboardingCompleted\": true\n   }"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "me"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Complete Onboarding",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"primaryGoal\": \"maintain_physique\",\n  \"gender\": \"male\",\n  \"dateOfBirth\": \"1995-06-15\",\n  \"height\": 178,\n  \"weight\": 80,\n  \"fitnessLevel\": \"intermediate\",\n  \"availableEquipment\": \"full_gym\",\n  \"trainingDaysPerWeek\": 4,\n  \"injuries\": [],\n  \"preferredName\": \"John\",\n  \"motivationStyle\": \"balanced\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/me/onboarding",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "me",
+                "onboarding"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Subscribe to Trainer",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tier\": \"paid\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/me/subscribe/{{trainerId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "me",
+                "subscribe",
+                "{{trainerId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Workout History",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/me/history?limit=10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "me",
+                "history"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Memory for Trainer",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/me/memory/{{trainerId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "me",
+                "memory",
+                "{{trainerId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Profile (multipart — picture)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "firstName",
+                  "value": "John",
+                  "type": "text"
+                },
+                {
+                  "key": "profilePicture",
+                  "type": "file",
+                  "value": null
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/profile-update",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "profile-update"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Upload Profile Picture",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5YjdkMDg0YTBmZGQ1MzBkMDM0YzIwMSIsInJvbGUiOiJ0cmFpbmVyIiwiZW1haWwiOiJnYWJyaWVsQHRyYWluZXIuY29tIiwiaWF0IjoxNzgxNjg0NTExLCJleHAiOjE3ODIyODkzMTF9.nUPtVTfs1VKII2kQfuK45rCkgz_kVVP78PdqH6-Dw8M",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "profilePicture",
+                  "type": "file",
+                  "src": "/C:/Users/chowd/Downloads/Gemini_Generated_Image_wvk6gtwvk6gtwvk6.png"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/upload-profile-picture",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "upload-profile-picture"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Upload Profile Picture Copy",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "coverPhoto",
+                  "type": "file",
+                  "src": "/C:/Users/chowd/Downloads/Image (2).jpg"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/upload-cover-photo",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "upload-cover-photo"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete My Account",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/account-delete",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "account-delete"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Users (admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/user-list",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "user-list"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Trainer",
+      "item": [
+        {
+          "name": "Get All Trainers",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/trainer",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "trainer"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "disabled": true
+                },
+                {
+                  "key": "limit",
+                  "value": "1",
+                  "disabled": true
+                },
+                {
+                  "key": "specialty",
+                  "value": "muscle_gain",
+                  "disabled": true
+                },
+                {
+                  "key": "verified",
+                  "value": "true",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Trainers (Filter by Specialty)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/trainer?specialty=maintain_physique",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "trainer"
+              ],
+              "query": [
+                {
+                  "key": "specialty",
+                  "value": "maintain_physique"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Trainers (Verified Only)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/trainer?verified=true",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "trainer"
+              ],
+              "query": [
+                {
+                  "key": "verified",
+                  "value": "true"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Trainers by Specialty",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/trainer/specialty/maintain_physique",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "trainer",
+                "specialty",
+                "maintain_physique"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Single Trainer",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/trainer/{{trainerId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "trainer",
+                "{{trainerId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Trainer Full Profile",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/trainer/{{trainerId}}/full",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "trainer",
+                "{{trainerId}}",
+                "full"
+              ]
+            },
+            "description": "Trainer + blocks + exercises + steps + knowledgePack."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Trainer Profile",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.success && res.data && res.data._id) {",
+                  "  pm.collectionVariables.set('trainerId', res.data._id);",
+                  "  console.log('✅ trainerId saved:', res.data._id);",
+                  "}"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{trainerToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Gabriel Rowling\",\n  \"bio\": \"NASM CPT | Functional Strength Coach | Precision Nutrition L1.\",\n  \"certifications\": [\n    \"NASM Certified Personal Trainer\",\n    \"Certified Functional Strength Coach\",\n    \"Precision Nutrition Level 1\"\n  ],\n  \"specialty\": \"maintain_physique\", \n  \"trainingStyleTags\": [\n    \"Low-injury risk\",\n    \"Functional strength\",\n    \"Aesthetic balance\",\n    \"Sustainable routines\",\n    \"Lifestyle-friendly\"\n  ],\n//   \"systemPrompt\": \"You are Gabriel Rowling: NASM CPT, CFSC, PN L1. Specialty MAINTAIN PHYSIQUE. Output ONLY valid JSON.\", (server generated)\n  \"subscriptionPrice\": {\n    \"premium\": 49\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/trainer",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "trainer"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Trainer Profile",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{trainerToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"bio\": \"Updated: 5+ years helping clients maintain peak physique.\",\n  \"subscriptionPrice\": {\n    \"free\": true,\n    \"paid\": 24,\n    \"premium\": 59\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/trainer/{{trainerId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "trainer",
+                "{{trainerId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Trainer",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{trainerToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/trainer/{{trainerId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "trainer",
+                "{{trainerId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Set Anam Persona",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{trainerToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"personaId\": \"272f2ccb-6599-45d8-85e4-56d220f53f6a\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/trainer/{{trainerId}}/anam",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "trainer",
+                "{{trainerId}}",
+                "anam"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Remove Anam Persona",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{trainerToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/trainer/{{trainerId}}/anam",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "trainer",
+                "{{trainerId}}",
+                "anam"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Trainer Knowledge Pack",
+      "item": [
+        {
+          "name": "Get Knowledge Pack",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/trainer/{{trainerId}}/knowledge-pack",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "trainer",
+                "{{trainerId}}",
+                "knowledge-pack"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Knowledge Pack",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{trainerToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"daysPerWeek\": 4,\n  \"preferredSplits\": [\"Upper-Lower\", \"Full Body\", \"Push-Pull-Legs\"],\n  \"repRanges\": \"8-12\",\n  \"restTimes\": \"60-90s\",\n  \"intensityMeasure\": \"RPE\",  // enum: [\"RPE\", \"RIR\", \"%1RM\"]\n  \"deloadFrequency\": \"Every 6-8 weeks or when performance drops\",\n  \"cardioPhilosophy\": \"2-4 sessions/week Zone 2 or incline walk\",\n  \"mustUseExercises\": [\"Squat\", \"Romanian Deadlift\", \"Bench Press\", \"Pull Up\", \"Overhead Press\", \"Barbell Row\"],\n  \"avoidExercises\": [\"Behind-the-neck press\", \"Upright row\", \"Heavy Good Morning\"],\n  \"accessoryFavorites\": [\"Face Pull\", \"Cable Lateral Raise\", \"Incline Dumbbell Curl\", \"Tricep Pushdown\", \"Leg Curl\"],\n  \"proteinTarget\": \"0.8-1g per lb of bodyweight\",\n  \"hydrationRule\": \"Minimum 3L water per day\",\n  \"maintenancePlate\" : \"50% protein + veggies, 25% complex carbs, 25% healthy fats\",\n  \"weekendStrategy\" : \"Stay within maintenance calories, allow 1 flexible meal, keep protein high\",\n  \"consistencyMethod\" :\"Focus on the process not the outcome — show up 4 days every week\",\n   \"motivationDropResponse\" :\"Reduce volume by 20%, keep showing up, momentum builds back\",\n   \"plateauProtocol\" :\"Reassess sleep and nutrition first, then introduce progressive overload variation\",\n   \"deloadRules\" : \"Drop volume by 40-50%, keep intensity, 1 full week every 6-8 weeks\",\n   \"naturalPhrases\" : [\"How does it feel\" ],\n   \"neverSayPhrases\" : [\"Trainer hard \" , \"No pain no gain\"],\n  \"coachingStyle\": \"balanced\" // enum: [\"strict\", \"chill\", \"balanced\"] ,\n  \n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/trainer/{{trainerId}}/knowledge-pack",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "trainer",
+                "{{trainerId}}",
+                "knowledge-pack"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Upsert Knowledge Pack (PUT)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{trainerToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"daysPerWeek\": 5,\n  \"repRanges\": \"6-12\",\n  \"coachingStyle\": \"balanced\",\n  \"cardioPhilosophy\": \"Zone 2 cardio 3x/week minimum\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/trainer/{{trainerId}}/knowledge-pack",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "trainer",
+                "{{trainerId}}",
+                "knowledge-pack"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Partial Update Knowledge Pack (PATCH)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{trainerToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"restTimes\": \"90-120s\",\n  \"deloadFrequency\": \"Every 8 weeks\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/trainer/{{trainerId}}/knowledge-pack",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "trainer",
+                "{{trainerId}}",
+                "knowledge-pack"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Knowledge Pack",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{trainerToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/trainer/{{trainerId}}/knowledge-pack",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "trainer",
+                "{{trainerId}}",
+                "knowledge-pack"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Exercise Blocks",
+      "item": [
+        {
+          "name": "Get Exercise Library (All Blocks)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/trainer/{{trainerId}}/blocks",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "trainer",
+                "{{trainerId}}",
+                "blocks"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Exercise Library (Approved Only)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/trainer/{{trainerId}}/blocks?approvedOnly=true",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "trainer",
+                "{{trainerId}}",
+                "blocks"
+              ],
+              "query": [
+                {
+                  "key": "approvedOnly",
+                  "value": "true"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Exercise Library (Filter by Category)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/trainer/{{trainerId}}/blocks?category=upper_body&approvedOnly=true",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "trainer",
+                "{{trainerId}}",
+                "blocks"
+              ],
+              "query": [
+                {
+                  "key": "category",
+                  "value": "upper_body"
+                },
+                {
+                  "key": "approvedOnly",
+                  "value": "true"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Single Block (with exercises + steps)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/block/{{blockId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "block",
+                "{{blockId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Exercise Block (Manual)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.success && res.data && res.data._id) {",
+                  "  pm.collectionVariables.set('blockId', res.data._id);",
+                  "  if (res.data.exercises && res.data.exercises.length) {",
+                  "    pm.collectionVariables.set('exerciseId', res.data.exercises[0]._id);",
+                  "  }",
+                  "  console.log('✅ blockId saved:', res.data._id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{trainerToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"10 Upper Body Exercises\",\n  \"description\": \"Core upper body compound and accessory movements\",\n  \"category\": \"upper_body\",\n  \"exercises\": [\n    {\n      \"name\": \"Bench Press\",\n      \"muscleGroup\": \"chest\",\n      \"difficulty\": \"intermediate\",\n      \"equipment\": \"barbell\",\n      \"sets\": 4,\n      \"reps\": \"8-10\",\n      \"restTime\": \"90s\",\n      \"rpe\": \"7-8\",\n      \"substitutions\": { \"noBarbell\": \"Dumbbell Bench Press\", \"noMachine\": \"Push-up\", \"homeOnly\": \"Floor Press\", \"hotelGym\": \"Dumbbell Bench Press\" },\n      \"tags\": [\"compound\", \"push\", \"chest\"],\n      \"steps\": [\n        { \"order\": 1, \"instruction\": \"Lie flat, grip slightly wider than shoulders\", \"tip\": \"Retract shoulder blades\" },\n        { \"order\": 2, \"instruction\": \"Lower bar to mid-chest under control\", \"tip\": \"3-second descent\" },\n        { \"order\": 3, \"instruction\": \"Press up to full extension\", \"tip\": \"Drive feet into floor\" }\n      ]\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/trainer/{{trainerId}}/blocks",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "trainer",
+                "{{trainerId}}",
+                "blocks"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Generate Exercise Block with AI ⚡",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.success && res.data && res.data._id) {",
+                  "  pm.collectionVariables.set('blockId', res.data._id);",
+                  "  console.log('✅ AI blockId saved (not approved yet):', res.data._id);",
+                  "}"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{trainerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{trainerToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"blockName\": \"2 Upper Body Exercises\",\n  \"category\": \"upper_body\",\n  \"count\": 2,\n  \"context\": \"Maintenance clients, moderate intensity, compound movements. Include substitutions.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/trainer/{{trainerId}}/blocks/generate",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "trainer",
+                "{{trainerId}}",
+                "blocks",
+                "generate"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Approve Block ✅",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{trainerToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/trainer/{{trainerId}}/blocks/{{blockId}}/approve",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "trainer",
+                "{{trainerId}}",
+                "blocks",
+                "{{blockId}}",
+                "approve"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Block Metadata",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{trainerToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"15 Upper Body Exercises (Updated)\",\n  \"description\": \"Refined for maintenance programming\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/trainer/{{trainerId}}/blocks/{{blockId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "trainer",
+                "{{trainerId}}",
+                "blocks",
+                "{{blockId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Block (cascades exercises + steps)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{trainerToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/trainer/{{trainerId}}/blocks/{{blockId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "trainer",
+                "{{trainerId}}",
+                "blocks",
+                "{{blockId}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Exercises",
+      "item": [
+        {
+          "name": "Get All Exercises in Block",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/block/{{blockId}}/exercises",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "block",
+                "{{blockId}}",
+                "exercises"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Single Exercise",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/block/{{blockId}}/exercises/{{exerciseId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "block",
+                "{{blockId}}",
+                "exercises",
+                "{{exerciseId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Exercise in Block",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.success && res.data && res.data._id) {",
+                  "  pm.collectionVariables.set('exerciseId', res.data._id);",
+                  "  console.log('✅ exerciseId saved:', res.data._id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{trainerToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Overhead Press\",\n  \"muscleGroup\": \"shoulders\",\n  \"difficulty\": \"intermediate\",\n  \"equipment\": \"barbell\",\n  \"sets\": 3,\n  \"reps\": \"8-10\",\n  \"restTime\": \"90s\",\n  \"rpe\": \"7-8\",\n  \"substitutions\": { \"noBarbell\": \"Dumbbell Shoulder Press\", \"noMachine\": \"Arnold Press\", \"homeOnly\": \"Pike Push-Up\", \"hotelGym\": \"Dumbbell Shoulder Press\" },\n  \"tags\": [\"compound\", \"push\", \"shoulders\"],\n  \"steps\": [\n    { \"order\": 1, \"instruction\": \"Barbell at shoulder height, grip just outside shoulders\" },\n    { \"order\": 2, \"instruction\": \"Brace core, press overhead to full extension\", \"tip\": \"Push head through the window\" },\n    { \"order\": 3, \"instruction\": \"Lower under control\", \"tip\": \"3-second descent\" }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/block/{{blockId}}/exercises",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "block",
+                "{{blockId}}",
+                "exercises"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Exercise",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{trainerToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sets\": 4,\n  \"reps\": \"6-8\",\n  \"restTime\": \"120s\",\n  \"rpe\": \"8-9\",\n  \"difficulty\": \"advanced\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/block/{{blockId}}/exercises/{{exerciseId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "block",
+                "{{blockId}}",
+                "exercises",
+                "{{exerciseId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Exercise (cascades steps)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{trainerToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/block/{{blockId}}/exercises/{{exerciseId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "block",
+                "{{blockId}}",
+                "exercises",
+                "{{exerciseId}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Exercise Steps",
+      "item": [
+        {
+          "name": "Get All Steps for Exercise",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/exercise-steps/{{exerciseId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "exercise-steps",
+                "{{exerciseId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Step for Exercise",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.success && res.data && res.data._id) {",
+                  "  pm.collectionVariables.set('stepId', res.data._id);",
+                  "  console.log('✅ stepId saved:', res.data._id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{trainerToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"order\": 1,\n  \"instruction\": \"Set up the bar at shoulder height on the rack\",\n  \"duration\": \"30 seconds\",\n  \"tip\": \"Make sure clips are secure before unracking\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/exercise-steps/{{exerciseId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "exercise-steps",
+                "{{exerciseId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Step",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{trainerToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"instruction\": \"Set up the bar at shoulder height, ensuring safety pins are set\",\n  \"tip\": \"Double-check clips before loading weight\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/exercise-steps/{{exerciseId}}/{{stepId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "exercise-steps",
+                "{{exerciseId}}",
+                "{{stepId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Step",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{trainerToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/exercise-steps/{{exerciseId}}/{{stepId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "exercise-steps",
+                "{{exerciseId}}",
+                "{{stepId}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "🗂️ Categories",
+      "item": [
+        {
+          "name": "Get All Categories (Public)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/category?trainerId={{trainerId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "category"
+              ],
+              "query": [
+                {
+                  "key": "trainerId",
+                  "value": "{{trainerId}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Category by Slug",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/category/slug/bench-press?trainerId={{trainerId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "category",
+                "slug",
+                "bench-press"
+              ],
+              "query": [
+                {
+                  "key": "trainerId",
+                  "value": "{{trainerId}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get My Categories (Trainer)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{trainerToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/category/my",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "category",
+                "my"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Category by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/category/{{categoryId}}?trainerId={{trainerId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "category",
+                "{{categoryId}}"
+              ],
+              "query": [
+                {
+                  "key": "trainerId",
+                  "value": "{{trainerId}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Category",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.success && res.data && res.data._id) {",
+                  "  pm.collectionVariables.set('categoryId', res.data._id);",
+                  "  console.log('✅ categoryId saved:', res.data._id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{trainerToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"category\": \"Bench Press\",\n  \"slug\": \"bench-press\",\n  \"description\": \"All upper body exercise videos — chest, back, shoulders, arms\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/category/create",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "category",
+                "create"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Category",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{trainerToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"category\": \"Upper Body Training\",\n  \"slug\": \"upper-body-training\",\n  \"description\": \"Updated — comprehensive upper body video library\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/category/{{categoryId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "category",
+                "{{categoryId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Category",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{trainerToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/category/{{categoryId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "category",
+                "{{categoryId}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "🎥 Content (Videos)",
+      "item": [
+        {
+          "name": "Get All Content (Public)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/content/content?trainerId={{trainerId}}&isPublished=true",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "content",
+                "content"
+              ],
+              "query": [
+                {
+                  "key": "trainerId",
+                  "value": "{{trainerId}}"
+                },
+                {
+                  "key": "isPublished",
+                  "value": "true"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get content by trainer and category",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5YjdkMDg0YTBmZGQ1MzBkMDM0YzIwMSIsInJvbGUiOiJ0cmFpbmVyIiwiZW1haWwiOiJnYWJyaWVsQHRyYWluZXIuY29tIiwiaWF0IjoxNzgyMTA3MTA2LCJleHAiOjE3ODI3MTE5MDZ9.UisMD8E2kyF__PC5zwI086PcjZpqKPv5WKAodvHKdak",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/content/my-content",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "content",
+                "my-content"
+              ],
+              "query": [
+                {
+                  "key": "categoryId",
+                  "value": null,
+                  "disabled": true
+                },
+                {
+                  "key": "muscleGroup",
+                  "value": null,
+                  "disabled": true
+                },
+                {
+                  "key": "difficulty",
+                  "value": null,
+                  "disabled": true
+                },
+                {
+                  "key": "search",
+                  "value": null,
+                  "disabled": true
+                },
+                {
+                  "key": "page",
+                  "value": null,
+                  "disabled": true
+                },
+                {
+                  "key": "limit",
+                  "value": null,
+                  "disabled": true
+                },
+                {
+                  "key": "isPublished",
+                  "value": null,
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Content by Muscle Group",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/content/content?trainerId={{trainerId}}&muscleGroup=chest&isPublished=true",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "content",
+                "content"
+              ],
+              "query": [
+                {
+                  "key": "trainerId",
+                  "value": "{{trainerId}}"
+                },
+                {
+                  "key": "muscleGroup",
+                  "value": "chest"
+                },
+                {
+                  "key": "isPublished",
+                  "value": "true"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Search Content",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/content/content?trainerId={{trainerId}}&search=bench press form",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "content",
+                "content"
+              ],
+              "query": [
+                {
+                  "key": "trainerId",
+                  "value": "{{trainerId}}"
+                },
+                {
+                  "key": "search",
+                  "value": "bench press form"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Single Content (+ increments view)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/content/content/{{contentId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "content",
+                "content",
+                "{{contentId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Content (Video)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.success && res.data && res.data._id) {",
+                  "  pm.collectionVariables.set('contentId', res.data._id);",
+                  "  console.log('✅ contentId saved:', res.data._id);",
+                  "}"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{trainerToken}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "categoryId",
+                  "value": "{{categoryId}}",
+                  "type": "text",
+                  "uuid": "38aaeed1-77e8-4a33-a31d-cd6895e5d585"
+                },
+                {
+                  "key": "title",
+                  "value": "Perfect Bench Press Form — Full Tutorial",
+                  "type": "text",
+                  "uuid": "d8c369db-6db2-48f6-8d10-312de8cfda3e"
+                },
+                {
+                  "key": "description",
+                  "value": "Complete guide to bench press technique. Grip width, shoulder retraction, bar path, foot position, common mistakes.",
+                  "type": "text",
+                  "uuid": "88981580-08ab-4deb-a52c-040a8680868f"
+                },
+                {
+                  "key": "contentType",
+                  "value": "video",
+                  "type": "text",
+                  "uuid": "b4cb8500-343a-4ea1-8917-84ca477ac277"
+                },
+                {
+                  "key": "video",
+                  "type": "file",
+                  "uuid": "ffa4c52c-9bcc-4878-8bb7-c6a4194f56a8",
+                  "src": "/C:/Users/chowd/Downloads/Tutor Application Dashboard (1).mp4"
+                },
+                {
+                  "key": "thumbnail",
+                  "type": "file",
+                  "uuid": "76a872c2-d7f6-4574-9923-b9db42dee80a",
+                  "src": "/C:/Users/chowd/Downloads/images (4).jpg"
+                },
+                {
+                  "key": "durationSeconds",
+                  "value": "840",
+                  "type": "text",
+                  "uuid": "0d054a8e-c919-4471-a64a-180253b9e93c"
+                },
+                {
+                  "key": "exerciseName",
+                  "value": "Bench Press",
+                  "type": "text",
+                  "uuid": "f544cb29-d3d7-44d4-91a9-b9b2c763c91b"
+                },
+                {
+                  "key": "muscleGroups",
+                  "value": "[\"chest\", \"shoulders\", \"arms\"]",
+                  "description": "//  \"upper_body\", \"chest\", \"back\",\"shoulders\", \"arms\",\"lower_body\",\"legs\",\"glutes\",\"core\",\"full_body\",\"cardio\",\"boxing\"",
+                  "type": "text",
+                  "uuid": "ac963785-98ca-4baa-94c4-3a45f93589c8"
+                },
+                {
+                  "key": "difficulty",
+                  "value": "beginner",
+                  "description": "// \"beginner\", \"intermediate\", \"advanced\", \"all\"",
+                  "type": "text",
+                  "uuid": "7bad999f-76d8-4010-b55a-8d82bbaba058"
+                },
+                {
+                  "key": "equipment",
+                  "value": "[\"barbell\", \"bench\"]",
+                  "type": "text",
+                  "uuid": "1bc8ab67-5a3c-46f9-be9a-fef85ad050e3"
+                },
+                {
+                  "key": "tags",
+                  "value": "[\"bench press\", \"chest\", \"compound\", \"push\", \"form guide\"]",
+                  "type": "text",
+                  "uuid": "f714f3df-8d41-4d8c-a45f-458a8d74c593"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/content/content",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "content",
+                "content"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "get category by category id",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.success && res.data && res.data._id) {",
+                  "  pm.collectionVariables.set('contentId', res.data._id);",
+                  "  console.log('✅ contentId saved:', res.data._id);",
+                  "}"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{trainerToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"categoryId\": \"{{categoryId}}\",\n  \"title\": \"Perfect Bench Press Form — Full Tutorial\",\n  \"description\": \"Complete guide to bench press technique. Grip width, shoulder retraction, bar path, foot position, common mistakes.\",\n  \"contentType\": \"video\",\n  \"videoUrl\": \"https://storage.example.com/videos/bench-press-form.mp4\",\n  \"thumbnailUrl\": \"https://storage.example.com/thumbnails/bench-press-form.jpg\",\n  \"durationSeconds\": 840,\n  \"exerciseName\": \"Bench Press\",\n  \"muscleGroups\": [\"chest\", \"shoulders\", \"arms\"],  //  \"upper_body\", \"chest\", \"back\",\"shoulders\", \"arms\",\"lower_body\",\"legs\",\"glutes\",\"core\",\"full_body\",\"cardio\",\"boxing\",\n  \"difficulty\": \"beginner\", // [\"beginner\", \"intermediate\", \"advanced\", \"all\"]\n  \"equipment\": [\"barbell\", \"bench\"],\n  \"tags\": [\"bench press\", \"chest\", \"compound\", \"push\", \"form guide\"]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/content/category/:categoryId",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "content",
+                "category",
+                ":categoryId"
+              ],
+              "variable": [
+                {
+                  "key": "categoryId",
+                  "value": "69c892ac461a6d5ad654719c"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update content (Video)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.success && res.data && res.data._id) {",
+                  "  pm.collectionVariables.set('contentId', res.data._id);",
+                  "  console.log('✅ contentId saved:', res.data._id);",
+                  "}"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{trainerToken}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "categoryId",
+                  "value": "{{categoryId}}",
+                  "type": "text",
+                  "uuid": "38aaeed1-77e8-4a33-a31d-cd6895e5d585"
+                },
+                {
+                  "key": "title",
+                  "value": "Perfect Bench Press Form — Full Tutorial",
+                  "type": "text",
+                  "uuid": "d8c369db-6db2-48f6-8d10-312de8cfda3e"
+                },
+                {
+                  "key": "description",
+                  "value": "Complete guide to bench press technique. Grip width, shoulder retraction, bar path, foot position, common mistakes.",
+                  "type": "text",
+                  "uuid": "88981580-08ab-4deb-a52c-040a8680868f"
+                },
+                {
+                  "key": "contentType",
+                  "value": "video",
+                  "type": "text",
+                  "uuid": "b4cb8500-343a-4ea1-8917-84ca477ac277"
+                },
+                {
+                  "key": "video",
+                  "type": "file",
+                  "uuid": "ffa4c52c-9bcc-4878-8bb7-c6a4194f56a8",
+                  "src": "/C:/Users/chowd/Downloads/Tutor Application Dashboard (2).mp4"
+                },
+                {
+                  "key": "thumbnail",
+                  "type": "file",
+                  "uuid": "76a872c2-d7f6-4574-9923-b9db42dee80a",
+                  "src": "/C:/Users/chowd/Downloads/dex-screener-logo-png_seeklogo-527276.png"
+                },
+                {
+                  "key": "durationSeconds",
+                  "value": "840",
+                  "type": "text",
+                  "uuid": "0d054a8e-c919-4471-a64a-180253b9e93c"
+                },
+                {
+                  "key": "exerciseName",
+                  "value": "Bench Press",
+                  "type": "text",
+                  "uuid": "f544cb29-d3d7-44d4-91a9-b9b2c763c91b"
+                },
+                {
+                  "key": "muscleGroups",
+                  "value": "[\"chest\", \"shoulders\", \"arms\"]",
+                  "description": "//  \"upper_body\", \"chest\", \"back\",\"shoulders\", \"arms\",\"lower_body\",\"legs\",\"glutes\",\"core\",\"full_body\",\"cardio\",\"boxing\"",
+                  "type": "text",
+                  "uuid": "ac963785-98ca-4baa-94c4-3a45f93589c8"
+                },
+                {
+                  "key": "difficulty",
+                  "value": "beginner",
+                  "description": "// \"beginner\", \"intermediate\", \"advanced\", \"all\"",
+                  "type": "text",
+                  "uuid": "7bad999f-76d8-4010-b55a-8d82bbaba058"
+                },
+                {
+                  "key": "equipment",
+                  "value": "[\"barbell\", \"bench\"]",
+                  "type": "text",
+                  "uuid": "1bc8ab67-5a3c-46f9-be9a-fef85ad050e3"
+                },
+                {
+                  "key": "tags",
+                  "value": "[\"bench press\", \"chest\", \"compound\", \"push\", \"form guide\"]",
+                  "type": "text",
+                  "uuid": "f714f3df-8d41-4d8c-a45f-458a8d74c593"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/content/content/{{contentId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "content",
+                "content",
+                "{{contentId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Publish Content ✅",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{trainerToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/content/content/{{contentId}}/publish",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "content",
+                "content",
+                "{{contentId}}",
+                "publish"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Content (Soft Delete)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{trainerToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/content/content/{{contentId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "content",
+                "content",
+                "{{contentId}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "description": "Content module mounts at /content. Video endpoints live at /content/content, content-categories at /content/categories."
+    },
+    {
+      "name": "💬 Chat",
+      "item": [
+        {
+          "name": "Get All My Threads",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/chat/threads",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "chat",
+                "threads"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Init Default Thread (Generic AI)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const r = pm.response.json();",
+                  "if (r.success && r.data && r.data._id) { pm.collectionVariables.set('chatId', r.data._id); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/chat/thread",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "chat",
+                "thread"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Init Trainer Thread (Persona)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const r = pm.response.json();",
+                  "if (r.success && r.data && r.data._id) { pm.collectionVariables.set('chatId', r.data._id); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"trainerId\": \"{{trainerId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/chat/thread",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "chat",
+                "thread"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Send Message — General",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"I want to maintain my physique. I train 4 days a week at a full gym. Where should I start?\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/chat",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "chat"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Send Message — Trainer Persona",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"Hey! Just subscribed. I want to maintain my physique. What should I focus on first?\",\n  \"trainerId\": \"{{trainerId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/chat",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "chat"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Send Message — With Workout Context",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"Just finished. My chest is really sore. Is that normal?\",\n  \"trainerId\": \"{{trainerId}}\",\n  \"workoutContext\": {\n    \"workoutId\": \"{{workoutId}}\",\n    \"focusArea\": \"chest\",\n    \"goal\": \"maintain_physique\",\n    \"planSummary\": \"Bench 4x8 @ 135lb, Incline DB 3x10, Cable Fly 3x12 — 55 min RPE 8\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/chat",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "chat"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Chat History",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/chat/history?trainerId={{trainerId}}&page=1&limit=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "chat",
+                "history"
+              ],
+              "query": [
+                {
+                  "key": "trainerId",
+                  "value": "{{trainerId}}"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Clear Chat History (trainer)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{trainerToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/chat/history?trainerId={{trainerId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "chat",
+                "history"
+              ],
+              "query": [
+                {
+                  "key": "trainerId",
+                  "value": "{{trainerId}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Thread (trainer)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{trainerToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/chat/{{chatId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "chat",
+                "{{chatId}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "💪 Workout",
+      "item": [
+        {
+          "name": "1️⃣ Create Workout Preferences",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const r = pm.response.json();",
+                  "if (r.success && r.data && r.data._id) { pm.collectionVariables.set('workoutId', r.data._id); console.log('✅ workoutId:', r.data._id); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"goal\": [\"maintain_physique\"],\n  \"focusArea\": [\"upper_body\", \"chest\"],\n  \"workout_environment\": [\"full_gym\"],\n  \"equipment_availablity\": [\"barbell\", \"dumbbells\", \"cable_machine\", \"bench\"],\n  \"workout_intensity\": [\"moderate\"],\n  \"duration\": 60,\n  \"date\": \"2026-06-20T09:00:00.000Z\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/workout",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "workout"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "2️⃣ Generate AI Plan ⚡",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/workout/{{workoutId}}/generate",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "workout",
+                "{{workoutId}}",
+                "generate"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "3️⃣ Start Session",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/workout/{{workoutId}}/start",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "workout",
+                "{{workoutId}}",
+                "start"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "4️⃣ Complete Exercise",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"completedSets\": 4,\n  \"actualWeight\": \"135lb\",\n  \"actualRpe\": 7,\n  \"notes\": \"Felt strong, form was solid\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/workout/{{workoutId}}/exercises/{{exerciseId}}/complete",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "workout",
+                "{{workoutId}}",
+                "exercises",
+                "{{exerciseId}}",
+                "complete"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "5️⃣ Complete Session + Check-in",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"checkInResponse\": \"Completed. Bench 135lb 4x8, Pull-ups BW 3x8, OHP 95lb 3x10. RPE 7/10. No pain.\",\n  \"actualDurationMinutes\": 58\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/workout/{{workoutId}}/complete",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "workout",
+                "{{workoutId}}",
+                "complete"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Today's Workout",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/workout/today",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "workout",
+                "today"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get All My Workouts",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/workout",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "workout"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Workouts (Filter by Status)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/workout?status=completed&limit=5",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "workout"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "completed"
+                },
+                {
+                  "key": "limit",
+                  "value": "5"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Single Workout",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/workout/{{workoutId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "workout",
+                "{{workoutId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Skip Session",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/workout/{{workoutId}}/skip",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "workout",
+                "{{workoutId}}",
+                "skip"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Workout (Pending Only)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/workout/{{workoutId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "workout",
+                "{{workoutId}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "📞 Anam AI (Video Call)",
+      "item": [
+        {
+          "name": "1️⃣ Start Session",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const r = pm.response.json();",
+                  "if (r.success && r.data && r.data.dbSessionId) { pm.collectionVariables.set('sessionId', r.data.dbSessionId); console.log('✅ sessionId:', r.data.dbSessionId); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"trainerId\": \"{{trainerId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/anam/session/start",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "anam",
+                "session",
+                "start"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "2️⃣ Send Message (User Speaks)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"trainerId\": \"{{trainerId}}\",\n  \"message\": \"Hey! Just finished my workout. Bench felt heavy, only got 6 reps on my last set. What should I do?\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/anam/session/{{sessionId}}/message",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "anam",
+                "session",
+                "{{sessionId}}",
+                "message"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "3️⃣ End Call",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/anam/session/{{sessionId}}/end",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "anam",
+                "session",
+                "{{sessionId}}",
+                "end"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Usage (Monthly Minutes)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/anam/usage",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "anam",
+                "usage"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Call History",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/anam/call-history?trainerId={{trainerId}}&page=1&limit=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "anam",
+                "call-history"
+              ],
+              "query": [
+                {
+                  "key": "trainerId",
+                  "value": "{{trainerId}}"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Sessions (Call Logs)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/anam/sessions?limit=10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "anam",
+                "sessions"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "📩 Trainer Requests",
+      "item": [
+        {
+          "name": "Send Request (user)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const r = pm.response.json();",
+                  "if (r.success && r.data && r.data._id) { pm.collectionVariables.set('requestId', r.data._id); console.log('✅ requestId:', r.data._id); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"trainerId\": \"{{trainerId}}\",\n  \"note\": \"Hi! I've struggled with lower back pain and want a sustainable routine. I train 4 days/week at a full gym. Can you help?\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/trainer-request",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "trainer-request"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "My Active Request (user)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{user}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/trainer-request/my",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "trainer-request",
+                "my"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "My Request History (user)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{user}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/trainer-request/my/history",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "trainer-request",
+                "my",
+                "history"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Cancel Request (user)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/trainer-request/{{requestId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "trainer-request",
+                "{{requestId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Incoming Requests (trainer)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const r = pm.response.json();",
+                  "if (r.success && r.data && r.data.length) { pm.collectionVariables.set('requestId', r.data[0]._id); console.log('✅ requestId:', r.data[0]._id); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{trainerToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/trainer-request/incoming",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "trainer-request",
+                "incoming"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Incoming Requests (status=accepted)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{trainerToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/trainer-request/incoming?status=accepted",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "trainer-request",
+                "incoming"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "accepted"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Accept Request (trainer)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{trainerToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/trainer-request/{{requestId}}/accept",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "trainer-request",
+                "{{requestId}}",
+                "accept"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Reject Request (trainer)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{trainerToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rejectionReason\": \"I am fully booked at the moment. Please try again in 2 weeks.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/trainer-request/{{requestId}}/reject",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "trainer-request",
+                "{{requestId}}",
+                "reject"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "🧾 Invoices",
+      "item": [
+        {
+          "name": "Create Invoice (trainer)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const r = pm.response.json();",
+                  "if (r.success && r.data && r.data._id) { pm.collectionVariables.set('invoiceId', r.data._id); console.log('✅ invoiceId:', r.data._id); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{trainerToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"requestId\": \"{{requestId}}\",\n  \"amount\": 2900,\n  \"description\": \"1 Month Personal Training — Gabriel Rowling\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/invoice",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "invoice"
+              ]
+            },
+            "description": "amount in CENTS. 2900 = $29.00, 4900 = $49.00."
+          },
+          "response": []
+        },
+        {
+          "name": "Send Invoice (trainer)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{trainerToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/invoice/{{invoiceId}}/send",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "invoice",
+                "{{invoiceId}}",
+                "send"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Renewal Invoice (trainer)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const r = pm.response.json();",
+                  "if (r.success && r.data && r.data._id) { pm.collectionVariables.set('invoiceId', r.data._id); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{trainerToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"previousInvoiceId\": \"{{invoiceId}}\",\n  \"amount\": 2900,\n  \"description\": \"1 Month Personal Training Renewal — Gabriel Rowling\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/invoice/renewal",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "invoice",
+                "renewal"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "My Invoices (user)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/invoice/my",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "invoice",
+                "my"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Trainer Invoices (trainer)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{trainerToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/invoice/trainer?status=sent",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "invoice",
+                "trainer"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "sent"
+                }
+              ]
+            },
+            "description": "Filter by status: draft | sent | paid | expired"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Invoice by ID (user or trainer)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/invoice/{{invoiceId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "invoice",
+                "{{invoiceId}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "description": "amount is in CENTS — 2900 = $29.00 (see invoice.service.ts: amount/100)."
+    },
+    {
+      "name": "💳 Payments",
+      "item": [
+        {
+          "name": "Verify Payment (user)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const r = pm.response.json();",
+                  "if (r.success && r.data && r.data.subscription && r.data.subscription._id) { pm.collectionVariables.set('subscriptionId', r.data.subscription._id); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"invoiceId\": \"{{invoiceId}}\",\n  \"transactionId\": \"pi_3SPbHcRjZ7l8BlE90KSEzZz1\",\n  \"gateway\": \"stripe\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/payment/verify",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "payment",
+                "verify"
+              ]
+            },
+            "description": "gateway: stripe | bkash | nagad | other"
+          },
+          "response": []
+        },
+        {
+          "name": "My Payments (user)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/payment/my",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "payment",
+                "my"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "📦 Subscriptions",
+      "item": [
+        {
+          "name": "Status (user)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const r = pm.response.json();",
+                  "if (r.success && r.data && r.data.subscription && r.data.subscription._id) { pm.collectionVariables.set('subscriptionId', r.data.subscription._id); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/subscription/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "subscription",
+                "status"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Cancel Subscription (user)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/subscription/{{subscriptionId}}/cancel",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "subscription",
+                "{{subscriptionId}}",
+                "cancel"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Trainer Subscribers (trainer)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{trainerToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/subscription/trainer?status=active",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "subscription",
+                "trainer"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "active"
+                }
+              ]
+            },
+            "description": "Filter by status: active | expired | cancelled"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "💰 Commission",
+      "item": [
+        {
+          "name": "Get Commission Rate (public)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/commission",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "commission"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Set Commission Rate (admin)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"platformCommissionPercent\": 20\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/commission",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "commission"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Preview Split (admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amountCents\": 5000\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/commission/calculate",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "commission",
+                "calculate"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "🎟️ Promo Code",
+      "item": [
+        {
+          "name": "Validate Promo (user)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"P2PA-56J6-4997\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/promo/validate",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "promo",
+                "validate"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Redeem Promo (user)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"P2PA-56J6-4997\",\n  \"revenueCatTransactionId\": \"rc_txn_abc\",\n  \"revenueCatProductId\": \"rc_prod_xyz\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/promo/redeem",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "promo",
+                "redeem"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Import Codes (admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"affiliate\",\n  \"codes\": [\"CODE1\", \"CODE2\", \"CODE3\"],\n  \"priceCents\": 999,\n  \"durationDays\": 30,\n  \"label\": \"1 Month Plan\",\n  \"revenueCatProductId\": \"rc_prod_xyz\",\n  \"maxUses\": 1,\n  \"batchId\": \"batch_2026_06\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/promo/import",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "promo",
+                "import"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List Codes (admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/promo?type=affiliate&status=active&batchId=batch_2026_06&page=1&limit=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "promo"
+              ],
+              "query": [
+                {
+                  "key": "type",
+                  "value": "affiliate"
+                },
+                {
+                  "key": "status",
+                  "value": "active"
+                },
+                {
+                  "key": "batchId",
+                  "value": "batch_2026_06"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Promo Stats (admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/promo/stats",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "promo",
+                "stats"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Disable / Re-enable Code (admin)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"disabled\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/promo/CODE1/disable",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "promo",
+                "CODE1",
+                "disable"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Set Default Trainer (admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"trainerId\": \"{{trainerId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/promo/default-trainer",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "promo",
+                "default-trainer"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "💸 Withdrawals",
+      "item": [
+        {
+          "name": "Earnings Dashboard (trainer)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{trainerToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/withdrawal/earnings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "withdrawal",
+                "earnings"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Payment History (trainer)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{trainerToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/withdrawal/payments?limit=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "withdrawal",
+                "payments"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "My Withdrawals (trainer)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{trainerToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/withdrawal/my",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "withdrawal",
+                "my"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Request Withdrawal (trainer)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const r = pm.response.json();",
+                  "if (r.success && r.data && r.data.withdrawal && r.data.withdrawal._id) { pm.collectionVariables.set('withdrawalId', r.data.withdrawal._id); console.log('✅ withdrawalId:', r.data.withdrawal._id); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{trainerToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"requestedAmountCents\": 2000,\n  \"withdrawalMethod\": \"paypal\",\n  \"paymentEmail\": \"gabriel@paypal.com\",\n  \"additionalNote\": \"Monthly withdrawal\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/withdrawal",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "withdrawal"
+              ]
+            },
+            "description": "requestedAmountCents in CENTS. withdrawalMethod: paypal | stripe | bank_transfer"
+          },
+          "response": []
+        },
+        {
+          "name": "All Withdrawals (admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const r = pm.response.json();",
+                  "if (r.success && r.data && r.data.length) { pm.collectionVariables.set('withdrawalId', r.data[0]._id); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/withdrawal/admin/all?status=pending&limit=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "withdrawal",
+                "admin",
+                "all"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "pending"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Approve Withdrawal (admin)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"adminNote\": \"Approved. Sending payment within 24 hours.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/withdrawal/{{withdrawalId}}/approve",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "withdrawal",
+                "{{withdrawalId}}",
+                "approve"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Mark Paid (admin)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"adminNote\": \"$20.00 sent via PayPal. Ref: PP-12345.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/withdrawal/{{withdrawalId}}/paid",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "withdrawal",
+                "{{withdrawalId}}",
+                "paid"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Reject Withdrawal (admin)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"adminNote\": \"Your earnings have not fully cleared yet. Please try again in 3 days.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/withdrawal/{{withdrawalId}}/reject",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "withdrawal",
+                "{{withdrawalId}}",
+                "reject"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "📢 Updates",
+      "item": [
+        {
+          "name": "Send Update (trainer)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const r = pm.response.json();",
+                  "if (r.success && r.data && r.data._id) { pm.collectionVariables.set('updateId', r.data._id); console.log('✅ updateId:', r.data._id); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{trainerToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{userId}}\",\n  \"title\": \"Today's Workout Plan\",\n  \"description\": \"Hey John! Focus on upper body today. Warm up properly, keep your bench controlled. Aim RPE 7-8.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/update",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "update"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Today's Updates (user)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/update/today",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "update",
+                "today"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "My Updates (user)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/update/my?limit=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "update",
+                "my"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Unread Count (user)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/update/unread-count",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "update",
+                "unread-count"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Mark One as Read (user)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/update/{{updateId}}/read",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "update",
+                "{{updateId}}",
+                "read"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Mark All as Read (user)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/update/read-all",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "update",
+                "read-all"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Sent Updates (trainer)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{trainerToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/update/sent?limit=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "update",
+                "sent"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Update (trainer)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{trainerToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/update/{{updateId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "update",
+                "{{updateId}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "🔔 Notifications",
+      "item": [
+        {
+          "name": "My Notifications",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/notification",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notification"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Unread Badge Count",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/notification/badge-count",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notification",
+                "badge-count"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Send Push (admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"New feature\",\n  \"message\": \"Video calling is now live!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/notification/send-push",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notification",
+                "send-push"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update User Status (admin)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{userId}}\",\n  \"status\": \"active\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/notification/update-status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notification",
+                "update-status"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "⚙️ Settings",
+      "item": [
+        {
+          "name": "Get About",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/about",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "about"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create About (admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"description\": \"Lorem ipsum about page content.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/about/create",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "about",
+                "create"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update About (admin)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"description\": \"Updated about page content.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/about/update",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "about",
+                "update"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Privacy",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/privacy",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "privacy"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Privacy (admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"description\": \"Lorem ipsum privacy policy.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/privacy/create",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "privacy",
+                "create"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Privacy (admin)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"description\": \"Updated privacy policy.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/privacy/update",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "privacy",
+                "update"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Terms",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/terms",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "terms"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Terms (admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"description\": \"Lorem ipsum terms & conditions.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/terms/create",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "terms",
+                "create"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Terms (admin)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"description\": \"Updated terms & conditions.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/terms/update",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "terms",
+                "update"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "📱 Device",
+      "item": [
+        {
+          "name": "1. Get User Devices",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userId}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{TOKEN}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/devices",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "devices"
+              ]
+            },
+            "description": "Retrieve all devices paired by the authenticated user."
+          },
+          "response": []
+        },
+        {
+          "name": "2. Pair Device",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{TOKEN}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Samsung Galaxy Watch 6\",\n  \"serialNumber\": \"SN123456789\",\n  \"macAddress\": \"00:1A:2B:3C:4D:5E\",\n  \"deviceType\": \"Watch\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/devices/pair",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "devices",
+                "pair"
+              ]
+            },
+            "description": "Pair a new device. Maximum 3 devices allowed per user."
+          },
+          "response": []
+        },
+        {
+          "name": "3. Update Device Status",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{TOKEN}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"isConnected\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/devices/:deviceId/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "devices",
+                ":deviceId",
+                "status"
+              ],
+              "variable": [
+                {
+                  "key": "deviceId",
+                  "value": "DEVICE_ID_HERE"
+                }
+              ]
+            },
+            "description": "Update whether a device is currently connected."
+          },
+          "response": []
+        },
+        {
+          "name": "4. Set Primary Device",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{TOKEN}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/devices/:deviceId/primary",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "devices",
+                ":deviceId",
+                "primary"
+              ],
+              "variable": [
+                {
+                  "key": "deviceId",
+                  "value": "DEVICE_ID_HERE"
+                }
+              ]
+            },
+            "description": "Set a specific device as the primary device for the user."
+          },
+          "response": []
+        },
+        {
+          "name": "5. Unpair Device",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{TOKEN}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/devices/:deviceId",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "devices",
+                ":deviceId"
+              ],
+              "variable": [
+                {
+                  "key": "deviceId",
+                  "value": "DEVICE_ID_HERE"
+                }
+              ]
+            },
+            "description": "Remove/unpair a device."
+          },
+          "response": []
+        },
+        {
+          "name": "6. Sync Device Metrics",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{TOKEN}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/devices/:deviceId/metrics",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "devices",
+                ":deviceId",
+                "metrics"
+              ],
+              "variable": [
+                {
+                  "key": "deviceId",
+                  "value": "DEVICE_ID_HERE"
+                }
+              ]
+            },
+            "description": "Get/Sync health metrics from the device."
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:4001/api/v1"
+    },
+    {
+      "key": "userToken",
+      "value": ""
+    },
+    {
+      "key": "trainerToken",
+      "value": ""
+    },
+    {
+      "key": "adminToken",
+      "value": ""
+    },
+    {
+      "key": "trainerId",
+      "value": ""
+    },
+    {
+      "key": "userId",
+      "value": ""
+    },
+    {
+      "key": "blockId",
+      "value": ""
+    },
+    {
+      "key": "exerciseId",
+      "value": ""
+    },
+    {
+      "key": "stepId",
+      "value": ""
+    },
+    {
+      "key": "chatId",
+      "value": ""
+    },
+    {
+      "key": "categoryId",
+      "value": ""
+    },
+    {
+      "key": "contentId",
+      "value": ""
+    },
+    {
+      "key": "workoutId",
+      "value": ""
+    },
+    {
+      "key": "sessionId",
+      "value": ""
+    },
+    {
+      "key": "requestId",
+      "value": ""
+    },
+    {
+      "key": "invoiceId",
+      "value": ""
+    },
+    {
+      "key": "subscriptionId",
+      "value": ""
+    },
+    {
+      "key": "updateId",
+      "value": ""
+    },
+    {
+      "key": "withdrawalId",
+      "value": ""
+    },
+    {
+      "key": "deviceId",
+      "value": ""
+    }
+  ]
+}

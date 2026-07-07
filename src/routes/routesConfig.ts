@@ -31,13 +31,17 @@ import { UpdateRoutes } from "../modules/update/update.route";
 import { CommissionRoutes } from "../modules/commission/commission.route";
 import { WithdrawalRoutes } from "../modules/withdrawal/withdrawal.route";
 import { PromoCodeRoutes } from "../modules/promoCode/promoCode.route";
+import { DefaultContentRoutes } from "../modules/defaultContent/defaultContent.route";
 
 // import { PaymentRoute } from "../modules/unused_payments/payment.route";
+
+import { DeviceRoutes } from "../modules/device/device.route";
 
 export const routesConfig = [
   { path: "auth", handler: UserRoutes },
   { path: "category", handler: CategoryRoutes },
   { path: "content", handler: ContentRoutes },
+  { path: "default-content", handler: DefaultContentRoutes },
   { path: "workout", handler: WorkoutRoutes },
   { path: "trainer", handler: TrainerRoutes },
   { path: "trainerKnowladge", handler: TrainerKnowledgePackRoutes },
@@ -55,6 +59,7 @@ export const routesConfig = [
   { path: "commission", handler: CommissionRoutes },
   { path: "withdrawal", handler: WithdrawalRoutes },
   { path: "promo", handler: PromoCodeRoutes },
+  { path: "devices", handler: DeviceRoutes },
 
   { path: "terms", handler: TermsRoutes },
   { path: "about", handler: AboutRoutes },
