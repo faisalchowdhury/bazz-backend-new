@@ -1,5 +1,7 @@
 import { SubscriptionModel } from "./subscription.model";
 import { UserModel } from "../user/user.model";
+import { TrainerModel } from "../trainer/trainer.model";
+import { sendAppNotification } from "../notifications/notification.helper";
 
 // ─────────────────────────────────────────────────────────────
 // GET SUBSCRIPTION STATUS
@@ -98,6 +100,19 @@ export const expireSubscriptions = async () => {
         subscriptionTier: "free",
       },
     });
+
+    // Notify user about expired subscription
+    try {
+      const trainer = await TrainerModel.findById(sub.trainerId).select("name");
+      const trainerName = trainer ? trainer.name : "your trainer";
+      await sendAppNotification({
+        userId: sub.userId.toString(),
+        title: "Subscription Expired 🔴",
+        message: `Your training subscription with "${trainerName}" has ended. Renew to continue your training access!`,
+      });
+    } catch (notifErr) {
+      console.error("Failed to send subscription expired notification:", notifErr);
+    }
   }
 
   return expired.length;
@@ -129,7 +144,7 @@ export const getExpiringSoon = async (daysFromNow: number) => {
     [reminderField]: false, // only ones we haven't notified yet
   })
     .populate("userId", "firstName lastName email")
-    .populate("trainerId", "name")
+    .populate("trainerId", "userId name")
     .lean();
 };
 

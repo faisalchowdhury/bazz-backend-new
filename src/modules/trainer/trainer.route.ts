@@ -12,6 +12,7 @@ import {
   createTrainer,
   updateTrainer,
   deleteTrainer,
+  getTrainerDashboardStats,
 } from "./trainer.controller";
 import { removePersona, setPersonaId } from "../anam/anam.controller";
 import { trainerBlockSubRoutes } from "../exerciseBlock/exerciseBlock.route";
@@ -23,6 +24,7 @@ const router = Router();
 router.get("/", getAllTrainers);
 router.get("/specialty/:specialty", getTrainersBySpecialty); // before /:id
 router.get("/me", guardRole(["trainer"]), getMyTrainer); // userId from JWT
+router.get("/me/dashboard-stats", guardRole(["trainer"]), getTrainerDashboardStats);
 router.get("/user/:userId", getTrainerByUser); // lookup by user account id
 router.get("/:id", getTrainer);
 router.get("/:id/full", getTrainerFull);

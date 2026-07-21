@@ -125,6 +125,7 @@ const userSchema = new Schema<IUser>(
     bio: { type: String, required: false },
     isVerified: { type: Boolean, required: true, default: false },
     isDeleted: { type: Boolean, required: true, default: false },
+    fcmToken: { type: String, required: false },
 
     // ── Fitness Profile ──────────────────────────────────────
     height: { type: Number, required: false },
@@ -153,7 +154,7 @@ const userSchema = new Schema<IUser>(
     },
     subscriptionTier: {
       type: String,
-      enum: ["free", "paid", "premium"],
+      enum: ["free", "paid", "premium", "monthly", "annual"],
       default: "free",
     },
     subscriptionStartDate: { type: Date, required: false },

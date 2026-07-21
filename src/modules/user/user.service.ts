@@ -35,6 +35,7 @@ export const registerUserService = async (data: any) => {
     gender,
     bio,
     role,
+    fcmToken,
   } = data.body;
 
   console.log(data.body);
@@ -58,6 +59,7 @@ export const registerUserService = async (data: any) => {
     bio,
     role,
     isVerified: false,
+    fcmToken,
   };
 
   if (data.file) {

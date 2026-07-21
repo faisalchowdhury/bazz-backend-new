@@ -4,6 +4,7 @@ import {
   getExpiringSoon,
   markReminderSent,
 } from "../modules/subscription/subscription.service";
+import { sendAppNotification } from "../modules/notifications/notification.helper";
 
 // ─────────────────────────────────────────────────────────────
 // NOTIFICATION HELPER
@@ -18,12 +19,12 @@ const sendNotification = async (
   body: string,
   type: "user" | "trainer",
 ) => {
-  // TODO: integrate with your notification service
-  // e.g. Firebase FCM, OneSignal, SendGrid email etc.
-  console.log(`[NOTIFICATION → ${type.toUpperCase()}]`);
-  console.log(`  To:    ${type === "user" ? userId : trainerId}`);
-  console.log(`  Title: ${title}`);
-  console.log(`  Body:  ${body}`);
+  const targetId = type === "user" ? userId : trainerId;
+  await sendAppNotification({
+    userId: targetId,
+    title,
+    message: body,
+  });
 };
 
 // ─────────────────────────────────────────────────────────────
@@ -60,7 +61,7 @@ const sendRenewalRemindersTask = async () => {
       // Notify user
       await sendNotification(
         user._id.toString(),
-        trainer._id.toString(),
+        trainer.userId.toString(),
         "Subscription Expiring Soon",
         `Your training subscription with ${trainer.name} expires in 7 days. Contact your trainer to renew.`,
         "user",
@@ -69,7 +70,7 @@ const sendRenewalRemindersTask = async () => {
       // Notify trainer
       await sendNotification(
         user._id.toString(),
-        trainer._id.toString(),
+        trainer.userId.toString(),
         "Subscriber Expiring Soon",
         `${user.firstName} ${user.lastName}'s subscription expires in 7 days. Send a renewal invoice.`,
         "trainer",
@@ -86,7 +87,7 @@ const sendRenewalRemindersTask = async () => {
 
       await sendNotification(
         user._id.toString(),
-        trainer._id.toString(),
+        trainer.userId.toString(),
         "Subscription Expiring in 3 Days",
         `Your subscription with ${trainer.name} expires in 3 days. Renew now to keep your access.`,
         "user",
@@ -94,7 +95,7 @@ const sendRenewalRemindersTask = async () => {
 
       await sendNotification(
         user._id.toString(),
-        trainer._id.toString(),
+        trainer.userId.toString(),
         "Subscriber Expiring in 3 Days",
         `${user.firstName} ${user.lastName}'s subscription expires in 3 days. Send a renewal invoice now.`,
         "trainer",
@@ -111,7 +112,7 @@ const sendRenewalRemindersTask = async () => {
 
       await sendNotification(
         user._id.toString(),
-        trainer._id.toString(),
+        trainer.userId.toString(),
         "Subscription Expires Tomorrow!",
         `Your subscription with ${trainer.name} expires tomorrow. Pay your renewal invoice now to avoid losing access.`,
         "user",
@@ -119,7 +120,7 @@ const sendRenewalRemindersTask = async () => {
 
       await sendNotification(
         user._id.toString(),
-        trainer._id.toString(),
+        trainer.userId.toString(),
         "Subscriber Expires Tomorrow!",
         `${user.firstName} ${user.lastName}'s subscription expires tomorrow. Make sure they've paid their renewal invoice.`,
         "trainer",

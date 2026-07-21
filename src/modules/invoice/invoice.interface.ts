@@ -23,6 +23,9 @@ export interface IInvoice extends Document {
   // PDF stored on cloud (S3 / Cloudinary)
   pdfUrl?: string;
 
+  // Stripe hosted payment session URL
+  paymentUrl?: string;
+
   // Renewal tracking
   isRenewal: boolean;
   previousInvoiceId?: Types.ObjectId;

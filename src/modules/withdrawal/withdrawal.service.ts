@@ -2,6 +2,8 @@ import { Types } from "mongoose";
 import { WithdrawalModel } from "./withdrawal.model";
 import { PaymentModel } from "../payment/payment.model";
 import { getPlatformCommission } from "../commission/commission.service";
+import { TrainerModel } from "../trainer/trainer.model";
+import { sendAdminNotification } from "../notifications/notification.helper";
 
 // ─────────────────────────────────────────────────────────────
 // HELPER — GET TRAINER EARNINGS SUMMARY
@@ -144,6 +146,17 @@ export const requestWithdrawal = async (
     additionalNote,
     status: "pending",
   });
+
+  // Send admin notification
+  const trainer = await TrainerModel.findById(trainerId).select("name userId");
+  if (trainer) {
+    const amountInDollars = (requestedAmountCents / 100).toFixed(2);
+    await sendAdminNotification({
+      userId: trainer.userId,
+      title: "New Withdrawal Request 💰",
+      message: `Trainer "${trainer.name}" has requested a withdrawal of $${amountInDollars} via ${withdrawalMethod}.`,
+    });
+  }
 
   return {
     withdrawal,

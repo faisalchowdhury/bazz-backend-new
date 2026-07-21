@@ -144,35 +144,37 @@ export const emitNotification = async ({
   adminMsg?: string;
 }): Promise<void> => {
   if (!io) {
-    throw new Error("Socket.IO is not initialized");
+    console.log("⚠️ Socket.IO is not initialized, skipping real-time emission.");
   }
-
-  // Get the socket ID of the specific user
-  const userSocket = connectedUsers.get(userId.toString());
 
   // Get admin IDs
   const admins = (await UserModel.find({ role: "admin" }).select("_id")) as any;
   const adminIds = admins.map((admin: any) => admin._id.toString());
 
-  // Notify the specific user
-  if (userMsg && userSocket) {
-    io.to(userSocket.socketID).emit(`notification`, {
-      userId,
-      message: userMsg,
-    });
-  }
+  if (io) {
+    // Get the socket ID of the specific user
+    const userSocket = connectedUsers.get(userId.toString());
 
-  // Notify all admins
-  if (adminMsg) {
-    adminIds.forEach((adminId: any) => {
-      const adminSocket = connectedUsers.get(adminId);
-      if (adminSocket) {
-        io.to(adminSocket.socketID).emit(`notification`, {
-          adminId,
-          message: adminMsg,
-        });
-      }
-    });
+    // Notify the specific user
+    if (userMsg && userSocket) {
+      io.to(userSocket.socketID).emit(`notification`, {
+        userId,
+        message: userMsg,
+      });
+    }
+
+    // Notify all admins
+    if (adminMsg) {
+      adminIds.forEach((adminId: any) => {
+        const adminSocket = connectedUsers.get(adminId);
+        if (adminSocket) {
+          io.to(adminSocket.socketID).emit(`notification`, {
+            adminId,
+            message: adminMsg,
+          });
+        }
+      });
+    }
   }
 
   // Save notification to the database

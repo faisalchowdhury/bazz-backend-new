@@ -34,6 +34,12 @@ const roleNotificationConfig = {
     readField: "isUserRead",
     msgField: "userMsg",
   },
+  trainer: {
+    queryKey: "userId",
+    selectFields: "userMsg userMsgTittle status  createdAt updatedAt",
+    readField: "isUserRead",
+    msgField: "userMsg",
+  },
 } as any;
 
 export const getMyNotification = catchAsync(
@@ -60,36 +66,49 @@ export const getMyNotification = catchAsync(
     const readField = config.readField;
     const msgField = config.msgField;
 
+    // Get pagination query parameters
+    const page = parseInt(req.query.page as string, 10) || 1;
+    const limit = parseInt(req.query.limit as string, 10) || 10;
+    const skip = (page - 1) * limit;
+
     // Fetch notifications
     const notifications = await NotificationModel.find(query)
       .select(selectFields)
       .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
       .exec();
+
     const totalNotifications =
       await NotificationModel.countDocuments(query).exec();
+
     // Use paginationBuilder for pagination info
     const pagination = paginationBuilder({
       totalData: totalNotifications,
-      currentPage: 1,
-      limit: notifications.length,
+      currentPage: page,
+      limit: limit,
     });
+
     const formattedNotifications = notifications.map((notification) => ({
       _id: notification._id,
       isReadable: notification[readField] as boolean,
+      isRead: notification[readField] as boolean,
       msg: notification[msgField] as string,
       status: notification.status as string,
       bookingId: notification.bookingId as string,
       createdAt: notification.createdAt,
       updatedAt: notification.updatedAt,
     }));
+
     if (formattedNotifications.length === 0) {
       return sendResponse(res, {
-        statusCode: httpStatus.NO_CONTENT,
+        statusCode: httpStatus.OK,
         success: true,
         message: "You have no notifications.",
-        data: { notifications: [] },
+        data: { notifications: [], pagination },
       });
     }
+
     sendResponse(res, {
       statusCode: httpStatus.OK,
       success: true,
@@ -97,16 +116,9 @@ export const getMyNotification = catchAsync(
       data: {
         userInfo,
         notifications: formattedNotifications,
-        pagination: {
-          ...pagination,
-        },
+        pagination,
       },
     });
-    // Mark notifications as read
-    await NotificationModel.updateMany(
-      { ...query, [readField]: false },
-      { $set: { [readField]: true } },
-    );
   },
 );
 
@@ -287,3 +299,66 @@ export const createStatusNotification = async ({
     isRead: false,
   });
 };
+
+// ─────────────────────────────────────────────────────────────
+// READ ALL NOTIFICATIONS (make all notification status read)
+// ─────────────────────────────────────────────────────────────
+export const readAllNotifications = catchAsync(
+  async (req: Request, res: Response) => {
+    const auth = req.user as JwtPayloadWithUser;
+    if (!auth) throw new ApiError(httpStatus.UNAUTHORIZED, "Unauthorized");
+    const user = await findUserById(auth.id);
+    if (!user) throw new ApiError(httpStatus.NOT_FOUND, "User not found.");
+
+    const config =
+      roleNotificationConfig[user.role as keyof typeof roleNotificationConfig];
+    if (!config) {
+      throw new ApiError(httpStatus.UNAUTHORIZED, "Invalid user role.");
+    }
+
+    const query = { [config.queryKey]: user._id };
+    const readField = config.readField;
+
+    await NotificationModel.updateMany(
+      { ...query, [readField]: false },
+      { $set: { [readField]: true } }
+    );
+
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: "All notifications marked as read successfully.",
+      data: null,
+    });
+  }
+);
+
+// ─────────────────────────────────────────────────────────────
+// GET UNREAD COUNT
+// ─────────────────────────────────────────────────────────────
+export const getUnreadNotificationCount = catchAsync(
+  async (req: Request, res: Response) => {
+    const auth = req.user as JwtPayloadWithUser;
+    if (!auth) throw new ApiError(httpStatus.UNAUTHORIZED, "Unauthorized");
+    const user = await findUserById(auth.id);
+    if (!user) throw new ApiError(httpStatus.NOT_FOUND, "User not found.");
+
+    const config =
+      roleNotificationConfig[user.role as keyof typeof roleNotificationConfig];
+    if (!config) {
+      throw new ApiError(httpStatus.UNAUTHORIZED, "Invalid user role.");
+    }
+
+    const unreadCount = await NotificationModel.countDocuments({
+      [config.queryKey]: user._id,
+      [config.readField]: false,
+    }).exec();
+
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: "Unread count retrieved successfully.",
+      data: { unreadCount },
+    });
+  }
+);

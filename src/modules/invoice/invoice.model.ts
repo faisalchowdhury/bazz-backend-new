@@ -35,6 +35,7 @@ const invoiceSchema = new Schema<IInvoice>(
     },
 
     pdfUrl: { type: String },
+    paymentUrl: { type: String },
 
     isRenewal: { type: Boolean, default: false },
     previousInvoiceId: { type: Schema.Types.ObjectId, ref: "Invoice" },

@@ -8,6 +8,7 @@ import {
   createTrainerService,
   updateTrainerService,
   deleteTrainerService,
+  getTrainerDashboardStatsService,
 } from "./trainer.service";
 import { getBlocksByTrainer } from "../exerciseBlock/exerciseBlock.service";
 import { JwtPayloadWithUser } from "../../middlewares/userVerification";
@@ -213,5 +214,28 @@ export const deleteTrainer = async (
     res.json({ success: true, message: "Trainer deleted" });
   } catch (err: any) {
     res.status(400).json({ success: false, message: err.message });
+  }
+};
+
+// ─────────────────────────────────────────────────────────────
+// GET /trainers/me/dashboard-stats
+// ─────────────────────────────────────────────────────────────
+
+export const getTrainerDashboardStats = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  try {
+    const userId = (req.user as JwtPayloadWithUser).id;
+    const stats = await getTrainerDashboardStatsService(userId);
+
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: "Trainer dashboard statistics retrieved successfully",
+      data: stats,
+    });
+  } catch (err: any) {
+    res.status(500).json({ success: false, message: err.message });
   }
 };

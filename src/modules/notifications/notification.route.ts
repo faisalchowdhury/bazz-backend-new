@@ -3,14 +3,18 @@ import {
   adminSendPushNotification,
   getMyNotification,
   getUnreadBadgeCount,
+  getUnreadNotificationCount,
+  readAllNotifications,
   updateUserStatus,
 } from "./notification.controller";
 import { guardRole } from "../../middlewares/roleGuard";
 
 const router = express.Router();
 
-router.get("/", guardRole(["admin", "user"]), getMyNotification);
-router.get("/badge-count", guardRole(["admin", "user"]), getUnreadBadgeCount);
+router.get("/", guardRole(["admin", "user", "trainer"]), getMyNotification);
+router.get("/badge-count", guardRole(["admin", "user", "trainer"]), getUnreadBadgeCount);
+router.get("/unread-count", guardRole(["admin", "user", "trainer"]), getUnreadNotificationCount);
+router.patch("/read-all", guardRole(["admin", "user", "trainer"]), readAllNotifications);
 router.post("/send-push", guardRole("admin"), adminSendPushNotification);
 
 //-----> inpout

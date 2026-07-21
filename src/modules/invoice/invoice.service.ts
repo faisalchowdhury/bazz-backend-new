@@ -8,11 +8,14 @@ import { TrainerModel } from "../trainer/trainer.model";
 import { UserModel } from "../user/user.model";
 import { IInvoice } from "./invoice.interface";
 import { TrainerRequestModel } from "../trainerRequest/trainerRequest.model";
+import { SubscriptionModel } from "../subscription/subscription.model";
 import paginationBuilder from "../../utils/paginationBuilder";
 import {
   TRAINER_VIEW_USER_SELECT,
   formatUserForTrainerView,
 } from "../user/user.serializer";
+import stripe from "../../utils/stripe";
+import { sendInvoiceEmail } from "../user/user.utils";
 
 // ─────────────────────────────────────────────────────────────
 // HELPER — GENERATE INVOICE NUMBER
@@ -46,7 +49,12 @@ const generateInvoicePDF = async (invoiceData: {
   expiresAt: Date;
 }): Promise<string> => {
   return new Promise((resolve, reject) => {
-    const uploadsDir = path.join(process.cwd(), "public", "uploads", "invoices");
+    const uploadsDir = path.join(
+      process.cwd(),
+      "public",
+      "uploads",
+      "invoices",
+    );
 
     // Create directory if it doesn't exist
     if (!fs.existsSync(uploadsDir)) {
@@ -271,7 +279,7 @@ export const createInvoice = async (
   // 7. Build public URL for PDF
   // Replace this with your actual file serving URL
   const fileName = `${invoiceNumber}.pdf`;
-  const pdfUrl = `${process.env.BASE_URL || "http://localhost:4000"}/uploads/invoices/${fileName}`;
+  const pdfUrl = `${process.env.BASE_URL || "https://faisal8080.merinasib.shop"}/uploads/invoices/${fileName}`;
   // PDF saved to public/uploads/invoices/ which is served by express.static("public")
 
   // 8. Save invoice to DB
@@ -300,6 +308,7 @@ export const createInvoice = async (
 // ─────────────────────────────────────────────────────────────
 
 export const sendInvoice = async (trainerId: string, invoiceId: string) => {
+  // 1. Find the invoice and verify draft status
   const invoice = await InvoiceModel.findOne({
     _id: invoiceId,
     trainerId,
@@ -307,9 +316,77 @@ export const sendInvoice = async (trainerId: string, invoiceId: string) => {
   });
   if (!invoice) throw new Error("Invoice not found or already sent");
 
+  // Guard: Block sending/paying standard invoices if user already has an active subscription (non-renewals)
+  if (!invoice.isRenewal) {
+    const activeSub = await SubscriptionModel.findOne({
+      userId: invoice.userId,
+      status: "active",
+      endDate: { $gt: new Date() },
+    });
+    if (activeSub) {
+      throw new Error("This user already has an active subscription. Standard invoices cannot be sent or paid until their current subscription expires.");
+    }
+  }
+
+  // Load trainer and user details
+  const trainer = await TrainerModel.findById(trainerId).lean();
+  if (!trainer) throw new Error("Trainer not found");
+
+  const user = await UserModel.findById(invoice.userId).lean();
+  if (!user) throw new Error("User not found");
+
+  // 2. Create Stripe Checkout Session
+  const session = await stripe.checkout.sessions.create({
+    payment_method_types: ["card"],
+    line_items: [
+      {
+        price_data: {
+          currency: invoice.currency || "usd",
+          product_data: {
+            name: `Trainer Subscription — ${trainer.name}`,
+            description:
+              invoice.description || "Personal Training Subscription",
+          },
+          unit_amount: invoice.amount, // already in cents
+        },
+        quantity: 1,
+      },
+    ],
+    mode: "payment",
+    success_url: `${process.env.STRIPE_SUCCESS_URL || "https://faisal8080.merinasib.shop"}/payment-success?session_id={CHECKOUT_SESSION_ID}&invoiceId=${(invoice._id as any).toString()}`,
+    cancel_url: `${process.env.STRIPE_CANCEL_URL || "https://faisal8080.merinasib.shop"}/payment-cancel?invoiceId=${(invoice._id as any).toString()}`,
+    metadata: {
+      invoiceId: (invoice._id as any).toString(),
+      userId: invoice.userId.toString(),
+      trainerId: invoice.trainerId.toString(),
+    },
+  });
+
+  if (!session.url) {
+    throw new Error("Failed to generate Stripe payment session URL");
+  }
+
+  // 3. Save Stripe payment URL on Invoice
+  invoice.paymentUrl = session.url;
   invoice.status = "sent";
   invoice.sentAt = new Date();
   await invoice.save();
+
+  // 4. Send email to user containing the payment link
+  const userEmail = (user as any).email;
+  const userName = `${(user as any).firstName} ${(user as any).lastName}`;
+
+  await sendInvoiceEmail(
+    userEmail,
+    userName,
+    trainer.name,
+    invoice.amount,
+    invoice.description,
+    session.url,
+    invoice.pdfUrl,
+  ).catch((err) => {
+    console.error("Failed to send invoice email:", err);
+  });
 
   return invoice.populate([
     { path: "userId", select: "firstName lastName email" },

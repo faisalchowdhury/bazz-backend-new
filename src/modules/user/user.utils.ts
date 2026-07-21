@@ -375,3 +375,78 @@ export const findUserByEmail = async (email: string): Promise<IUser | null> => {
 export const findUserById = async (id: string): Promise<IUser | null> => {
   return UserModel.findById(id);
 };
+
+export const sendInvoiceEmail = async (
+  email: string,
+  name: string,
+  trainerName: string,
+  amountCents: number,
+  description: string,
+  paymentUrl: string,
+  pdfUrl?: string,
+): Promise<void> => {
+  try {
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      secure: true,
+      auth: {
+        user: Nodemailer_GMAIL,
+        pass: Nodemailer_GMAIL_PASSWORD,
+      },
+    });
+
+    const amountFormatted = `$${(amountCents / 100).toFixed(2)}`;
+
+    const emailContent = `
+<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f2f9fc; padding: 30px 20px; border-radius: 10px;">
+  <h1 style="text-align: center; color: #111111; font-family: 'Times New Roman', Times, serif; font-size: 32px; letter-spacing: 2px;">
+    ${process.env.AppName || "P2P FITTECH"}
+  </h1>
+  
+  <div style="background-color: white; padding: 25px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);">
+    <h2 style="color: #111111; text-align: center; font-size: 24px; font-weight: bold;">Hello ${name}!</h2>
+    <p style="font-size: 16px; color: #333; line-height: 1.6;">
+      Your trainer <strong>${trainerName}</strong> has sent you an invoice for personal training.
+    </p>
+
+    <div style="background-color: #f9f9f9; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #0073e6;">
+      <p style="margin: 5px 0; font-size: 15px; color: #555;"><strong>Description:</strong> ${description}</p>
+      <p style="margin: 5px 0; font-size: 15px; color: #555;"><strong>Amount Due:</strong> <span style="font-size: 18px; color: #111; font-weight: bold;">${amountFormatted}</span></p>
+    </div>
+  
+    <div style="text-align: center; margin: 30px 0;">
+      <a href="${paymentUrl}" style="background-color: #0073e6; color: white; padding: 12px 30px; font-size: 16px; font-weight: bold; text-decoration: none; border-radius: 5px; display: inline-block;">
+        Pay Invoice with Stripe
+      </a>
+    </div>
+
+    ${pdfUrl ? `
+    <p style="font-size: 14px; text-align: center; color: #666; margin-top: 15px;">
+      You can also view or download your detailed <a href="${pdfUrl}" target="_blank" style="color: #0073e6; text-decoration: underline;">PDF Invoice</a>.
+    </p>
+    ` : ""}
+
+    <p style="font-size: 14px; color: #333; text-align: center; line-height: 1.6; margin-top: 30px;">
+      Regards,<br>${process.env.AppName || "P2P FITTECH"} Team
+    </p>
+  </div>
+  
+  <p style="font-size: 12px; color: #666; margin-top: 10px; text-align: center;">
+    This is an automated notification. Please do not reply directly to this email.
+  </p>
+</div>
+`;
+
+    const mailOptions = {
+      from: "nodemailerapptest@gmail.com",
+      to: email,
+      subject: `New Invoice from ${trainerName} - P2P FitTech`,
+      html: emailContent,
+    };
+
+    await transporter.sendMail(mailOptions);
+  } catch (error) {
+    console.error(`Error sending invoice email to ${email}:`, error);
+    throw new ApiError(500, "Unexpected error occurred during sending invoice email.");
+  }
+};

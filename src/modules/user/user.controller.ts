@@ -14,6 +14,7 @@ import {
 import { completeOnboarding as completeOnboardingService } from "./user.service";
 import { OTPModel, UserModel } from "./user.model";
 import { TrainerModel } from "../trainer/trainer.model";
+import { SubscriptionModel } from "../subscription/subscription.model";
 
 import { emitNotification } from "../../utils/socket";
 import httpStatus from "http-status";
@@ -182,33 +183,49 @@ export const loginUser = catchAsync(async (req: Request, res: Response) => {
     throw new ApiError(401, "Wrong password!");
   }
 
+  if (fcmToken) {
+    user.fcmToken = fcmToken;
+  }
+
   const token = generateToken({
     id: userId,
     email: user.email,
     role: user.role,
   });
 
-  // For trainers, flag whether they have already created their Trainer
-  // profile (POST /trainer). true = profile exists, false = not set yet.
-  const isProfile =
-    user.role === "trainer"
-      ? !!(await TrainerModel.exists({ userId: user._id }))
+  // Determine if this user currently has an active subscription
+  const now = new Date();
+  const isSubscribed =
+    user.role === "user"
+      ? (!!(await SubscriptionModel.exists({
+          userId: user._id,
+          status: "active",
+        })) || !!(user.subscriptionEndDate && user.subscriptionEndDate > now))
       : false;
+
+  // Build the dynamic response payload based on the user's role
+  const responseData: any = {
+    user: {
+      _id: user._id,
+      name: user?.firstName + " " + user?.lastName,
+      email: user?.email,
+      role: user?.role,
+    },
+    isSubscribed,
+    token,
+  };
+
+  if (user.role === "trainer") {
+    responseData.isProfile = !!(await TrainerModel.exists({ userId: user._id }));
+  } else if (user.role === "user") {
+    responseData.onboardingCompleted = !!user.onboardingCompleted;
+  }
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
     message: "Login complete!",
-    data: {
-      user: {
-        _id: user._id,
-        name: user?.firstName + " " + user?.lastName,
-        email: user?.email,
-        role: user?.role,
-      },
-      isProfile,
-      token,
-    },
+    data: responseData,
   });
 
   await user.save();

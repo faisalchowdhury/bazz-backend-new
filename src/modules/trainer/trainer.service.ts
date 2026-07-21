@@ -5,6 +5,9 @@ import { getKnowledgePackService } from "../trainerKnowledge/trainerKnowledge.se
 import paginationBuilder from "../../utils/paginationBuilder";
 import { UserModel } from "../user/user.model";
 import { TGoal } from "../user/user.interface";
+import { SubscriptionModel } from "../subscription/subscription.model";
+import { ContentModel } from "../content/content.model";
+import { ExerciseBlockModel } from "../exerciseBlock/exerciseBlock.model";
 
 // ─────────────────────────────────────────────────────────────
 // BUILD SYSTEM PROMPT (generated — never taken from request body)
@@ -360,4 +363,96 @@ export const deleteTrainerService = async (trainerId: string) => {
   // Note: in production also clean up blocks/exercises/steps/knowledgePack
   await TrainerModel.findByIdAndDelete(trainerId);
   return { message: "Trainer deleted" };
+};
+
+// ─────────────────────────────────────────────────────────────
+// GET TRAINER DASHBOARD STATS (for logged-in trainer)
+// ─────────────────────────────────────────────────────────────
+
+export const getTrainerDashboardStatsService = async (userId: string) => {
+  const trainer = await TrainerModel.findOne({ userId });
+  if (!trainer) {
+    throw new Error("Trainer profile not found");
+  }
+
+  const trainerId = trainer._id;
+
+  // 1. Active Users (Subscriptions with status: "active" for this trainer)
+  const activeUsersCount = await SubscriptionModel.countDocuments({
+    trainerId,
+    status: "active",
+  });
+
+  // 2. New Users This Week (Subscriptions created/started this week)
+  const now = new Date();
+
+  // Rolling 7 days
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+  const newUsersRolling7DaysCount = await SubscriptionModel.countDocuments({
+    trainerId,
+    createdAt: { $gte: sevenDaysAgo },
+  });
+
+  // Calendar week (starting Monday)
+  const day = now.getDay();
+  const diff = now.getDate() - day + (day === 0 ? -6 : 1); // Adjust for Sunday
+  const startOfWeek = new Date(now.setDate(diff));
+  startOfWeek.setHours(0, 0, 0, 0);
+
+  const newUsersThisWeekCount = await SubscriptionModel.countDocuments({
+    trainerId,
+    createdAt: { $gte: startOfWeek },
+  });
+
+  // 3. Total Content (ContentModel)
+  const totalContentCount = await ContentModel.countDocuments({
+    trainerId,
+  });
+
+  const publishedContentCount = await ContentModel.countDocuments({
+    trainerId,
+    isPublished: true,
+  });
+
+  const draftContentCount = await ContentModel.countDocuments({
+    trainerId,
+    isPublished: false,
+  });
+
+  // 4. Workout Blocks (ExerciseBlockModel)
+  const totalWorkoutBlocksCount = await ExerciseBlockModel.countDocuments({
+    trainerId,
+  });
+
+  const approvedWorkoutBlocksCount = await ExerciseBlockModel.countDocuments({
+    trainerId,
+    isApproved: true,
+  });
+
+  const aiGeneratedWorkoutBlocksCount = await ExerciseBlockModel.countDocuments({
+    trainerId,
+    isAiGenerated: true,
+  });
+
+  return {
+    trainerId,
+    trainerName: trainer.name,
+    activeUsersCount,
+    newUsersThisWeek: {
+      calendarWeek: newUsersThisWeekCount,
+      rolling7Days: newUsersRolling7DaysCount,
+    },
+    contentStats: {
+      total: totalContentCount,
+      published: publishedContentCount,
+      draft: draftContentCount,
+    },
+    workoutBlocksStats: {
+      total: totalWorkoutBlocksCount,
+      approved: approvedWorkoutBlocksCount,
+      aiGenerated: aiGeneratedWorkoutBlocksCount,
+    },
+  };
 };

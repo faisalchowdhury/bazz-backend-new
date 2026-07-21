@@ -12,7 +12,7 @@ export type TGoal =
   | "muscle_gain"
   | "weight_loss"
   | "boxing";
-export type TSubscriptionTier = "free" | "paid" | "premium";
+export type TSubscriptionTier = "free" | "paid" | "premium" | "monthly" | "annual";
 export type TSubscriptionType = "default_plan" | "trainer_plan";
 export type TAdherence = "completed" | "skipped" | "modified";
 export type TMotivationStyle = "tough_love" | "gentle" | "balanced";
@@ -132,6 +132,7 @@ export interface IUser extends Document {
   bio?: string;
   isVerified: boolean;
   isDeleted: boolean;
+  fcmToken?: string;
 
   // ── Fitness Profile ───────────────────────────────────────
   height?: number;

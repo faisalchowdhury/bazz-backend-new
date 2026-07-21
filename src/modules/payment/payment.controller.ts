@@ -1,6 +1,10 @@
 import { Request, Response } from "express";
 import { JwtPayloadWithUser } from "../../middlewares/userVerification";
-import { verifyPayment, getMyPayments } from "./payment.service";
+import {
+  verifyPayment,
+  getMyPayments,
+  createDefaultCheckoutSession,
+} from "./payment.service";
 
 // ─────────────────────────────────────────────────────────────
 // POST /payments/verify
@@ -69,5 +73,37 @@ export const getMyPaymentsController = async (
     res.status(200).json({ success: true, data: result });
   } catch (err: any) {
     res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+// ─────────────────────────────────────────────────────────────
+// POST /payments/checkout/default
+// Create Stripe Checkout Session for dynamic app-wide subscription (Monthly/Annual)
+// ─────────────────────────────────────────────────────────────
+export const createDefaultCheckoutController = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  try {
+    const userId = (req.user as JwtPayloadWithUser).id;
+    const { tier, promoCode } = req.body;
+
+    if (!tier || !["monthly", "annual"].includes(tier)) {
+      res.status(400).json({
+        success: false,
+        message: "tier is required and must be 'monthly' or 'annual'",
+      });
+      return;
+    }
+
+    const result = await createDefaultCheckoutSession(userId, tier, promoCode);
+
+    res.status(200).json({
+      success: true,
+      message: "Stripe default subscription checkout session created.",
+      data: result,
+    });
+  } catch (err: any) {
+    res.status(400).json({ success: false, message: err.message });
   }
 };

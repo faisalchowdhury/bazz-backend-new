@@ -7,6 +7,7 @@ import {
   TRAINER_VIEW_USER_SELECT,
   formatUserForTrainerView,
 } from "../user/user.serializer";
+import { sendAppNotification } from "../notifications/notification.helper";
 
 // ─────────────────────────────────────────────────────────────
 // SEND REQUEST
@@ -43,6 +44,16 @@ export const sendTrainerRequest = async (
     note,
     status: "pending",
   });
+
+  // 4. Send notification to trainer
+  const senderUser = await UserModel.findById(userId).select("firstName lastName");
+  if (senderUser && trainer.userId) {
+    await sendAppNotification({
+      userId: trainer.userId,
+      title: "New Incoming Request 📩",
+      message: `${senderUser.firstName} ${senderUser.lastName} sent you a trainer request.`,
+    });
+  }
 
   return request;
 };
@@ -231,6 +242,16 @@ export const acceptRequest = async (trainerId: string, requestId: string) => {
   request.status = "accepted";
   request.acceptedAt = new Date();
   await request.save();
+
+  // Send notification to the user that request is accepted
+  const trainer = await TrainerModel.findById(trainerId).select("name");
+  if (trainer) {
+    await sendAppNotification({
+      userId: request.userId,
+      title: "Request Accepted! 🎉",
+      message: `${trainer.name} has accepted your training request!`,
+    });
+  }
 
   return request.populate("userId", "firstName lastName email");
 };

@@ -1,5 +1,6 @@
 import { UpdateModel } from "./update.model";
 import { UserModel } from "../user/user.model";
+import { sendAppNotification } from "../notifications/notification.helper";
 
 // ─────────────────────────────────────────────────────────────
 // CREATE UPDATE
@@ -22,6 +23,15 @@ export const createUpdate = async (
     title,
     description,
     isRead: false,
+  });
+
+  // Send notification to the user
+  const trainer = await UserModel.findById(trainerUserId).select("firstName lastName");
+  const trainerName = trainer ? `${trainer.firstName} ${trainer.lastName}` : "Your Trainer";
+  await sendAppNotification({
+    userId,
+    title: `New Update from ${trainerName} 📝`,
+    message: title,
   });
 
   return update;

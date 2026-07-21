@@ -32,6 +32,7 @@ import { CommissionRoutes } from "../modules/commission/commission.route";
 import { WithdrawalRoutes } from "../modules/withdrawal/withdrawal.route";
 import { PromoCodeRoutes } from "../modules/promoCode/promoCode.route";
 import { DefaultContentRoutes } from "../modules/defaultContent/defaultContent.route";
+import { IAPRoutes } from "../modules/iap/iap.route";
 
 // import { PaymentRoute } from "../modules/unused_payments/payment.route";
 
@@ -59,6 +60,7 @@ export const routesConfig = [
   { path: "commission", handler: CommissionRoutes },
   { path: "withdrawal", handler: WithdrawalRoutes },
   { path: "promo", handler: PromoCodeRoutes },
+  { path: "iap", handler: IAPRoutes },
   { path: "devices", handler: DeviceRoutes },
 
   { path: "terms", handler: TermsRoutes },
