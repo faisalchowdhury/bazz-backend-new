@@ -5,11 +5,11 @@
   "main": "index.js",
   "scripts": {
     "prod": "node ./dist/server.js",
-    "dev": "nodemon src/server.ts",
+    "dev": "node api.js && nodemon src/server.ts",
     "import:promo": "ts-node-dev --transpile-only --exit-child src/scripts/importPromoCodes.ts",
     "seed:trainers": "ts-node-dev --transpile-only --exit-child src/scripts/seedBuiltInTrainers.ts",
     "seed:default-content": "ts-node-dev --transpile-only --exit-child src/scripts/seedDefaultContent.ts",
-    "build": "tsc",
+    "build": "node api.js && tsc",
     "lint": "eslint src --ignore-path .eslintignore --ext .ts",
     "lint:fix": "npx eslint src --fix",
     "prettier": "prettier --ignore-path .gitignore --write \"./src/**/*.+(js|ts|json)\"",
